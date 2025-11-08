@@ -45,211 +45,337 @@
 </script>
 
 <div class="container">
-	<div class="header">
-		<div>
-			<h1>Weight Loss Tracker</h1>
-			<p>Track your weight loss journey</p>
-		</div>
-		<div class="user-info">
-			<span>Hello, {data.user.firstName}!</span>
-			<button class="logout-btn" on:click={logout}>Logout</button>
-		</div>
-	</div>
-
-	<div class="add-entry">
-		<h2>Add New Entry</h2>
-		<form on:submit|preventDefault={addEntry}>
-			<div class="form-group">
-				<label for="date">Date</label>
-				<input type="date" id="date" bind:value={date} required />
+	<div class="arcade-border">
+		<div class="header">
+			<div class="title-section">
+				<h1 class="glow">▼ WEIGHT TRACKER ▼</h1>
+				<p class="subtitle">[ PLAYER: {data.user.firstName.toUpperCase()} ]</p>
 			</div>
-
-			<div class="form-group">
-				<label for="weight">Weight (lbs)</label>
-				<input
-					type="number"
-					id="weight"
-					bind:value={weight}
-					step="0.1"
-					placeholder="150.5"
-					required
-				/>
-			</div>
-
-			<div class="form-group">
-				<label for="notes">Notes (optional)</label>
-				<textarea id="notes" bind:value={notes} placeholder="How are you feeling today?" />
-			</div>
-
-			<button type="submit" disabled={isSubmitting}>
-				{isSubmitting ? 'Adding...' : 'Add Entry'}
+			<button class="logout-btn pixel-border" on:click={logout}>
+				<span class="glow">QUIT</span>
 			</button>
-		</form>
-	</div>
-
-	{#if data.entries && data.entries.length > 0}
-		<div class="entries">
-			<h2>Recent Entries</h2>
-			<ul>
-				{#each data.entries as entry}
-					<li>
-						<span class="date">{entry.date}</span>
-						<span class="weight">{entry.weight} lbs</span>
-						{#if entry.notes}
-							<span class="notes">{entry.notes}</span>
-						{/if}
-					</li>
-				{/each}
-			</ul>
 		</div>
-	{:else}
-		<p class="no-data">No entries yet. Add your first weight entry above!</p>
-	{/if}
+
+		<div class="game-screen">
+			<div class="add-entry pixel-border">
+				<h2 class="section-title glow">[ NEW ENTRY ]</h2>
+				<form on:submit|preventDefault={addEntry}>
+					<div class="form-group">
+						<label for="date" class="glow">DATE:</label>
+						<input type="date" id="date" bind:value={date} required class="retro-input" />
+					</div>
+
+					<div class="form-group">
+						<label for="weight" class="glow">WEIGHT (LBS):</label>
+						<input
+							type="number"
+							id="weight"
+							bind:value={weight}
+							step="0.1"
+							placeholder="000.0"
+							required
+							class="retro-input"
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="notes" class="glow">NOTES:</label>
+						<textarea
+							id="notes"
+							bind:value={notes}
+							placeholder="ENTER YOUR MESSAGE..."
+							class="retro-input"
+						/>
+					</div>
+
+					<button type="submit" disabled={isSubmitting} class="submit-btn pixel-border">
+						<span class="glow">{isSubmitting ? '▶ SAVING...' : '▶ SAVE ENTRY'}</span>
+					</button>
+				</form>
+			</div>
+
+			{#if data.entries && data.entries.length > 0}
+				<div class="entries">
+					<h2 class="section-title glow">[ RECENT LOGS ]</h2>
+					<div class="entry-list">
+						{#each data.entries as entry, i}
+							<div class="entry-card pixel-border">
+								<div class="entry-header">
+									<span class="entry-num glow">#{String(i + 1).padStart(3, '0')}</span>
+									<span class="date glow">{entry.date}</span>
+								</div>
+								<div class="entry-weight">
+									<span class="weight-label">WEIGHT:</span>
+									<span class="weight glow">{entry.weight} LBS</span>
+								</div>
+								{#if entry.notes}
+									<div class="notes">
+										<span class="notes-label">LOG:</span>
+										<span class="notes-text">{entry.notes}</span>
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
+			{:else}
+				<div class="no-data pixel-border">
+					<p class="glow">[ NO DATA FOUND ]</p>
+					<p class="blink">INSERT FIRST ENTRY TO BEGIN</p>
+				</div>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <style>
 	.container {
-		max-width: 800px;
-		margin: 0 auto;
+		min-height: 100vh;
 		padding: 2rem;
-		font-family: system-ui, -apple-system, sans-serif;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.arcade-border {
+		width: 100%;
+		max-width: 900px;
+		background: rgba(10, 10, 10, 0.95);
+		border: 4px solid var(--neon-cyan);
+		box-shadow: 0 0 30px var(--neon-cyan), inset 0 0 30px rgba(0, 255, 255, 0.1);
+		padding: 2rem;
 	}
 
 	.header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
 		margin-bottom: 2rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 3px solid var(--neon-magenta);
 		flex-wrap: wrap;
 		gap: 1rem;
 	}
 
-	.user-info {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.user-info span {
-		color: #666;
-		font-weight: 500;
-	}
-
-	.logout-btn {
-		background: #666;
-		color: white;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		cursor: pointer;
-		font-weight: 500;
-	}
-
-	.logout-btn:hover {
-		background: #555;
+	.title-section {
+		flex: 1;
 	}
 
 	h1 {
-		color: #ff3e00;
-		margin-bottom: 0.5rem;
+		color: var(--neon-cyan);
+		font-size: 18px;
+		margin: 0 0 1rem 0;
+		letter-spacing: 2px;
 	}
 
-	h2 {
-		color: #333;
-		margin-top: 2rem;
-		margin-bottom: 1rem;
+	.subtitle {
+		color: var(--neon-green);
+		margin: 0;
+		font-size: 10px;
+	}
+
+	.logout-btn {
+		background: transparent;
+		color: var(--neon-orange);
+		border-color: var(--neon-orange);
+		padding: 0.8rem 1.5rem;
+	}
+
+	.logout-btn:hover:not(:disabled) {
+		background: rgba(255, 102, 0, 0.2);
+		box-shadow: 0 0 20px var(--neon-orange), inset 0 0 20px rgba(255, 102, 0, 0.3);
+	}
+
+	.game-screen {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
 	}
 
 	.add-entry {
-		background: #f5f5f5;
+		background: rgba(0, 0, 0, 0.8);
 		padding: 1.5rem;
-		border-radius: 8px;
-		margin: 2rem 0;
+		border-color: var(--neon-magenta);
+	}
+
+	.section-title {
+		color: var(--neon-magenta);
+		font-size: 14px;
+		margin: 0 0 1.5rem 0;
+		text-align: center;
+		letter-spacing: 3px;
 	}
 
 	.form-group {
-		margin-bottom: 1rem;
+		margin-bottom: 1.5rem;
 	}
 
 	label {
 		display: block;
-		margin-bottom: 0.5rem;
-		font-weight: 500;
-		color: #333;
+		margin-bottom: 0.8rem;
+		color: var(--neon-yellow);
+		font-size: 10px;
+		letter-spacing: 2px;
 	}
 
-	input,
-	textarea {
+	.retro-input {
 		width: 100%;
-		padding: 0.5rem;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		font-size: 1rem;
-		box-sizing: border-box;
-	}
-
-	textarea {
-		min-height: 80px;
-		resize: vertical;
-		font-family: inherit;
-	}
-
-	button {
-		background: #ff3e00;
-		color: white;
-		border: none;
-		padding: 0.75rem 1.5rem;
-		border-radius: 4px;
-		font-size: 1rem;
-		cursor: pointer;
-		font-weight: 500;
-	}
-
-	button:hover:not(:disabled) {
-		background: #e63900;
-	}
-
-	button:disabled {
-		background: #ccc;
-		cursor: not-allowed;
-	}
-
-	.entries ul {
-		list-style: none;
-		padding: 0;
-	}
-
-	.entries li {
-		background: white;
-		border: 1px solid #ddd;
 		padding: 1rem;
-		margin-bottom: 0.5rem;
-		border-radius: 4px;
+		border: 2px solid var(--neon-cyan);
+		background: rgba(0, 0, 0, 0.9);
+		color: var(--neon-cyan);
+		font-size: 12px;
+	}
+
+	textarea.retro-input {
+		min-height: 100px;
+		resize: vertical;
+		line-height: 1.6;
+	}
+
+	.submit-btn {
+		width: 100%;
+		background: rgba(0, 255, 0, 0.1);
+		color: var(--neon-green);
+		border-color: var(--neon-green);
+		padding: 1rem;
+		margin-top: 1rem;
+	}
+
+	.submit-btn:hover:not(:disabled) {
+		background: rgba(0, 255, 0, 0.3);
+		box-shadow: 0 0 30px var(--neon-green), inset 0 0 20px rgba(0, 255, 0, 0.3);
+	}
+
+	.submit-btn:disabled {
+		opacity: 0.4;
+		color: #666;
+		border-color: #666;
+		box-shadow: none;
+	}
+
+	.entries {
+		background: rgba(0, 0, 0, 0.6);
+		padding: 1.5rem;
+	}
+
+	.entry-list {
 		display: flex;
-		flex-wrap: wrap;
+		flex-direction: column;
 		gap: 1rem;
 	}
 
+	.entry-card {
+		background: rgba(0, 0, 0, 0.9);
+		padding: 1rem;
+		border-color: var(--neon-cyan);
+		transition: all 0.3s;
+	}
+
+	.entry-card:hover {
+		background: rgba(0, 255, 255, 0.05);
+		box-shadow: 0 0 25px var(--neon-cyan), inset 0 0 15px rgba(0, 255, 255, 0.2);
+	}
+
+	.entry-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.8rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--neon-cyan);
+	}
+
+	.entry-num {
+		color: var(--neon-magenta);
+		font-size: 10px;
+	}
+
 	.date {
-		font-weight: 600;
-		color: #333;
+		color: var(--neon-cyan);
+		font-size: 11px;
+	}
+
+	.entry-weight {
+		margin-bottom: 0.5rem;
+	}
+
+	.weight-label {
+		color: var(--neon-yellow);
+		font-size: 9px;
+		margin-right: 1rem;
 	}
 
 	.weight {
-		color: #ff3e00;
-		font-weight: 600;
+		color: var(--neon-green);
+		font-size: 14px;
 	}
 
 	.notes {
-		flex-basis: 100%;
-		color: #666;
-		font-style: italic;
+		margin-top: 0.8rem;
+		padding-top: 0.8rem;
+		border-top: 1px dashed var(--grid-color);
+	}
+
+	.notes-label {
+		color: var(--neon-pink);
+		font-size: 8px;
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+
+	.notes-text {
+		color: var(--neon-cyan);
+		font-size: 9px;
+		opacity: 0.8;
+		line-height: 1.6;
 	}
 
 	.no-data {
+		background: rgba(0, 0, 0, 0.9);
+		padding: 3rem 2rem;
 		text-align: center;
-		color: #666;
-		margin: 2rem 0;
+		border-color: var(--neon-orange);
+	}
+
+	.no-data p {
+		margin: 0.5rem 0;
+		color: var(--neon-orange);
+		font-size: 12px;
+	}
+
+	.blink {
+		animation: blink 1.5s infinite;
+		color: var(--neon-yellow);
+		font-size: 10px;
+	}
+
+	@keyframes blink {
+		0%,
+		49% {
+			opacity: 1;
+		}
+		50%,
+		100% {
+			opacity: 0.3;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.container {
+			padding: 1rem;
+		}
+
+		.arcade-border {
+			padding: 1rem;
+		}
+
+		h1 {
+			font-size: 12px;
+		}
+
+		.section-title {
+			font-size: 11px;
+		}
 	}
 </style>
