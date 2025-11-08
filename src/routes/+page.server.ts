@@ -1,8 +1,9 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/db/client';
-import { weightEntries } from '$lib/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { weightEntries, users } from '$lib/db/schema';
+import { desc, eq, asc } from 'drizzle-orm';
+import { calculateBMI, calculateImprovementScore, type UserStats } from '$lib/bmi';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
 	// Require authentication
@@ -13,13 +14,14 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	if (!platform?.env?.DB) {
 		return {
 			user: locals.user,
-			entries: []
+			entries: [],
+			leaderboard: []
 		};
 	}
 
 	const db = getDb(platform.env.DB);
 
-	// Only get entries for the logged-in user
+	// Get entries for the logged-in user
 	const entries = await db
 		.select()
 		.from(weightEntries)
@@ -27,8 +29,73 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 		.orderBy(desc(weightEntries.date))
 		.limit(10);
 
+	// Calculate leaderboard
+	const leaderboard = await calculateLeaderboard(db);
+
 	return {
 		user: locals.user,
-		entries
+		entries,
+		leaderboard
 	};
 };
+
+async function calculateLeaderboard(db: any): Promise<UserStats[]> {
+	// Get all users
+	const allUsers = await db.select().from(users);
+
+	const userStats: UserStats[] = [];
+
+	for (const user of allUsers) {
+		// Get first entry (oldest)
+		const [firstEntry] = await db
+			.select()
+			.from(weightEntries)
+			.where(eq(weightEntries.userId, user.id))
+			.orderBy(asc(weightEntries.date))
+			.limit(1);
+
+		// Get latest entry (newest)
+		const [latestEntry] = await db
+			.select()
+			.from(weightEntries)
+			.where(eq(weightEntries.userId, user.id))
+			.orderBy(desc(weightEntries.date))
+			.limit(1);
+
+		// Get total entry count
+		const allEntries = await db
+			.select()
+			.from(weightEntries)
+			.where(eq(weightEntries.userId, user.id));
+
+		// Only include users with at least 2 entries (need a trend)
+		if (firstEntry && latestEntry && allEntries.length >= 2) {
+			const firstBMI = calculateBMI(firstEntry.weight, user.height);
+			const latestBMI = calculateBMI(latestEntry.weight, user.height);
+
+			const stats: UserStats = {
+				userId: user.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				height: user.height,
+				firstWeight: firstEntry.weight,
+				latestWeight: latestEntry.weight,
+				firstBMI,
+				latestBMI,
+				bmiChange: firstBMI - latestBMI,
+				weightChange: firstEntry.weight - latestEntry.weight,
+				entryCount: allEntries.length
+			};
+
+			userStats.push(stats);
+		}
+	}
+
+	// Sort by improvement score (highest improvement first)
+	userStats.sort((a, b) => {
+		return calculateImprovementScore(b) - calculateImprovementScore(a);
+	});
+
+	// Return top 5
+	return userStats.slice(0, 5);
+}

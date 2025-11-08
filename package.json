@@ -12,7 +12,9 @@
 		"db:migrate:local": "wrangler d1 execute weightloss-db --local --file=./drizzle/migrations/0000_initial_schema.sql",
 		"db:migrate:remote": "wrangler d1 execute weightloss-db --remote --file=./drizzle/migrations/0000_initial_schema.sql",
 		"db:seed": "node scripts/seed-users.js",
-		"db:seed:remote": "node scripts/seed-users.js --remote"
+		"db:seed:remote": "node scripts/seed-users.js --remote",
+		"db:seed:entries": "node scripts/seed-weight-entries.js",
+		"db:seed:entries:remote": "node scripts/seed-weight-entries.js --remote"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^4.0.0",
