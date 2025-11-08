@@ -11,6 +11,44 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 - 👤 **User Authentication** - Secure login with bcrypt password hashing
 - 📝 **Weight Logging** - Track weight with dates and notes
 
+## How It Works
+
+### Authentication System
+
+The app uses a secure authentication system with the following features:
+
+- **Email Whitelist**: Only pre-approved emails can create accounts (configured in `src/lib/config/whitelist.ts`)
+- **Password Security**: Passwords are hashed using bcrypt with 10 salt rounds
+- **Session Management**: HTTP-only cookies for secure session handling (7-day expiration)
+- **Protected Routes**: Automatic redirection to login page for unauthenticated users
+
+### Leaderboard & Competition
+
+The app calculates a competitive leaderboard based on BMI improvement:
+
+1. **BMI Calculation**: Uses the formula `(weight in lbs / (height in inches)²) × 703`
+2. **Improvement Score**: Calculated as `(First BMI - Latest BMI) + Consistency Bonus`
+3. **Consistency Bonus**: Up to 2 points based on number of entries (0.1 points per entry)
+4. **Qualification**: Users need at least 2 weight entries to appear on the leaderboard
+5. **Rankings**: Top 5 users displayed with trophies for top 3 (Gold, Silver, Bronze)
+
+The leaderboard shows:
+- User's first and latest BMI
+- BMI improvement (positive numbers = weight loss)
+- Number of weight entries
+- Overall improvement score with ranking
+
+### Retro Arcade Styling
+
+The app features a retro 8-bit arcade aesthetic:
+
+- **Press Start 2P font** for authentic arcade feel
+- **Neon color palette**: Cyan, magenta, green, yellow, and orange
+- **CRT scanline effects** for authentic retro display
+- **Pixel borders** and glowing text effects
+- **Pulsing animations** and blink effects for important elements
+- **Dark theme** optimized for readability
+
 ## Tech Stack
 
 - **SvelteKit** - Web framework
@@ -26,19 +64,34 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 weightloss/
 ├── src/
 │   ├── lib/
-│   │   └── db/
-│   │       ├── schema.ts      # Database schema
-│   │       └── client.ts      # Database client
+│   │   ├── db/
+│   │   │   ├── schema.ts      # Database schema (users + weight_entries)
+│   │   │   └── client.ts      # Database client
+│   │   ├── config/
+│   │   │   └── whitelist.ts   # Email whitelist configuration
+│   │   ├── auth.ts            # Authentication utilities
+│   │   └── bmi.ts             # BMI calculation and leaderboard logic
 │   ├── routes/
-│   │   ├── +page.svelte       # Main page
+│   │   ├── +page.svelte       # Main page with leaderboard
 │   │   ├── +page.server.ts    # Server-side data loading
+│   │   ├── login/
+│   │   │   └── +page.svelte   # Login page
+│   │   ├── signup/
+│   │   │   └── +page.svelte   # Signup page
 │   │   └── api/
+│   │       ├── auth/
+│   │       │   ├── signup/+server.ts  # Signup endpoint
+│   │       │   ├── login/+server.ts   # Login endpoint
+│   │       │   └── logout/+server.ts  # Logout endpoint
 │   │       └── weight/
 │   │           └── +server.ts # API endpoint for adding entries
+│   ├── hooks.server.ts        # Session management
 │   ├── app.d.ts               # TypeScript definitions
+│   ├── app.css                # Global retro styling
 │   └── app.html               # HTML template
 ├── drizzle/
-│   └── migrations/            # Database migrations
+│   └── migrations/
+│       └── 0000_initial_schema.sql  # Initial migration
 ├── wrangler.toml              # Cloudflare configuration
 └── package.json
 ```
@@ -96,13 +149,38 @@ database_id = "YOUR_DATABASE_ID_HERE"  # Replace with your actual database ID
 npm run db:migrate:remote
 ```
 
-### 4. Deploy to Cloudflare Pages
+### 4. Create Cloudflare Pages Project
 
 ```bash
-npm run deploy
+npx wrangler pages project create weightloss-app --production-branch=main
 ```
 
-Or connect your GitHub repository to Cloudflare Pages for automatic deployments:
+### 5. Deploy to Cloudflare Pages
+
+```bash
+npm run build
+npx wrangler pages deploy .svelte-kit/cloudflare --project-name=weightloss-app --commit-dirty=true
+```
+
+### 6. Configure D1 Database Binding
+
+**Important**: After deployment, you must bind the D1 database to your Pages project:
+
+1. Go to [Cloudflare Dashboard → Pages](https://dash.cloudflare.com/pages)
+2. Click on your **weightloss-app** project
+3. Go to **Settings** → **Functions**
+4. Scroll down to **D1 database bindings**
+5. Click **Add binding**
+6. Set:
+   - **Variable name**: `DB`
+   - **D1 database**: Select `weightloss-db`
+7. Click **Save**
+
+Your app will now be fully functional at `https://weightloss-app.pages.dev`
+
+### Alternative: GitHub Integration
+
+You can also connect your GitHub repository to Cloudflare Pages for automatic deployments:
 
 1. Go to Cloudflare Dashboard → Pages
 2. Click "Create a project"
@@ -110,9 +188,7 @@ Or connect your GitHub repository to Cloudflare Pages for automatic deployments:
 4. Set build settings:
    - **Build command**: `npm run build`
    - **Build output directory**: `.svelte-kit/cloudflare`
-5. Add D1 database binding in Settings → Functions → D1 database bindings:
-   - **Variable name**: `DB`
-   - **D1 database**: Select your `weightloss-db`
+5. Add D1 database binding as described above
 
 ## Available Scripts
 
@@ -127,13 +203,30 @@ Or connect your GitHub repository to Cloudflare Pages for automatic deployments:
 
 ## Database Schema
 
-The app uses a single table `weight_entries`:
+The app uses two tables: `users` and `weight_entries`.
+
+### Users Table
+
+```sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,  -- bcrypt hashed
+  height REAL NOT NULL,    -- height in inches
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+```
+
+### Weight Entries Table
 
 ```sql
 CREATE TABLE weight_entries (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
   date TEXT NOT NULL,
-  weight REAL NOT NULL,
+  weight REAL NOT NULL,  -- weight in pounds
   notes TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
@@ -172,6 +265,16 @@ The local D1 database is stored in `.wrangler/state/v3/d1/`. You can inspect it 
 ```bash
 npx wrangler d1 execute weightloss-db --local --command "SELECT * FROM weight_entries"
 ```
+
+### Node.js Compatibility
+
+The app requires Node.js built-in modules (like `crypto` for bcrypt) which are enabled via the `nodejs_compat` compatibility flag in `wrangler.toml`:
+
+```toml
+compatibility_flags = ["nodejs_compat"]
+```
+
+This is essential for password hashing to work in the Cloudflare Workers runtime.
 
 ## License
 
