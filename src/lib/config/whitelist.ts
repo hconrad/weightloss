@@ -6,9 +6,8 @@
  */
 
 export const allowedEmails = [
-	'john@example.com',
-	'jane@example.com',
-	'bob@example.com'
+	'hans.conrad@gmail.com',
+	'jbernier@protonmail.com',
 	// Add more emails here as needed
 ];
 
