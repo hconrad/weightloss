@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, goto } from '$app/navigation';
 
 	export let data: PageData;
 
@@ -37,11 +37,24 @@
 			isSubmitting = false;
 		}
 	}
+
+	async function logout() {
+		await fetch('/api/auth/logout', { method: 'POST' });
+		goto('/login');
+	}
 </script>
 
 <div class="container">
-	<h1>Weight Loss Tracker</h1>
-	<p>Track your weight loss journey</p>
+	<div class="header">
+		<div>
+			<h1>Weight Loss Tracker</h1>
+			<p>Track your weight loss journey</p>
+		</div>
+		<div class="user-info">
+			<span>Hello, {data.user.firstName}!</span>
+			<button class="logout-btn" on:click={logout}>Logout</button>
+		</div>
+	</div>
 
 	<div class="add-entry">
 		<h2>Add New Entry</h2>
@@ -100,6 +113,41 @@
 		margin: 0 auto;
 		padding: 2rem;
 		font-family: system-ui, -apple-system, sans-serif;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 2rem;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.user-info {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.user-info span {
+		color: #666;
+		font-weight: 500;
+	}
+
+	.logout-btn {
+		background: #666;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		font-size: 0.9rem;
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.logout-btn:hover {
+		background: #555;
 	}
 
 	h1 {

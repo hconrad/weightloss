@@ -2,7 +2,12 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/db/client';
 import { weightEntries } from '$lib/db/schema';
 
-export const POST: RequestHandler = async ({ request, platform }) => {
+export const POST: RequestHandler = async ({ request, platform, locals }) => {
+	// Require authentication
+	if (!locals.user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	if (!platform?.env?.DB) {
 		return json({ error: 'Database not available' }, { status: 500 });
 	}
@@ -19,6 +24,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		const result = await db
 			.insert(weightEntries)
 			.values({
+				userId: locals.user.id,
 				date,
 				weight: parseFloat(weight),
 				notes: notes || null
