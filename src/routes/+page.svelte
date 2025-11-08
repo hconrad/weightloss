@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { invalidateAll, goto } from '$app/navigation';
+	import WeightTrendChart from '$lib/components/WeightTrendChart.svelte';
 
 	export let data: PageData;
 
@@ -101,6 +102,9 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Trend Chart -->
+		<WeightTrendChart entries={data.entries} height={data.user.height} />
 
 		<div class="game-screen">
 			<div class="add-entry pixel-border">
