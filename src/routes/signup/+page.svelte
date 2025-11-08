@@ -32,7 +32,7 @@
 			if (response.ok) {
 				goto('/');
 			} else {
-				error = data.error || 'SIGNUP FAILED';
+				error = (data.error || 'SIGNUP FAILED').toUpperCase();
 			}
 		} catch (err) {
 			error = 'SYSTEM ERROR. PLEASE TRY AGAIN.';

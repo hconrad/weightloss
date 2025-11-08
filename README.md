@@ -1,6 +1,15 @@
 # Weight Loss Tracker
 
-A simple weight tracking application built with SvelteKit and deployed to Cloudflare Pages with D1 database storage.
+A retro arcade-style weight tracking competition app built with SvelteKit and deployed to Cloudflare Pages with D1 database storage.
+
+## Features
+
+- 🎮 **Retro 8-bit Arcade Styling** - Dark theme with neon colors and CRT effects
+- 🏆 **Leaderboard** - BMI-based competition rankings with trophies
+- 🔒 **Email Whitelist** - Secure, invite-only signup
+- 📊 **BMI Tracking** - Automatic BMI calculation and progress tracking
+- 👤 **User Authentication** - Secure login with bcrypt password hashing
+- 📝 **Weight Logging** - Track weight with dates and notes
 
 ## Tech Stack
 
@@ -9,6 +18,7 @@ A simple weight tracking application built with SvelteKit and deployed to Cloudf
 - **Cloudflare D1** - SQLite database
 - **Drizzle ORM** - Type-safe database queries
 - **TypeScript** - Type safety
+- **Bcrypt** - Password hashing
 
 ## Project Structure
 
@@ -129,15 +139,23 @@ CREATE TABLE weight_entries (
 );
 ```
 
-## Features
+## Managing the Email Whitelist
 
-- Add weight entries with date, weight, and optional notes
-- View recent weight entries (last 10)
-- Fully serverless with Cloudflare Pages Functions
-- Type-safe database queries with Drizzle ORM
-- Responsive design
+This app uses an **email whitelist** to control who can sign up. Only approved emails can create accounts.
+
+### To Add a New User
+
+1. Edit `src/lib/config/whitelist.ts`
+2. Add their email to the `allowedEmails` array
+3. Save and restart the dev server (or redeploy)
+
+See [WHITELIST.md](./WHITELIST.md) for detailed instructions.
 
 ## Development Tips
+
+### Managing the Email Whitelist
+
+See [WHITELIST.md](./WHITELIST.md) for detailed instructions on adding/removing users.
 
 ### Adding New Fields
 

@@ -2,6 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/db/client';
 import { users } from '$lib/db/schema';
 import { hashPassword, setSessionCookie } from '$lib/auth';
+import { isEmailAllowed } from '$lib/config/whitelist';
 import { eq } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
@@ -18,6 +19,14 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 			return json(
 				{ error: 'All fields are required' },
 				{ status: 400 }
+			);
+		}
+
+		// Check if email is whitelisted
+		if (!isEmailAllowed(email)) {
+			return json(
+				{ error: 'This email is not authorized. Please contact the administrator for access.' },
+				{ status: 403 }
 			);
 		}
 
