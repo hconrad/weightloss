@@ -1,0 +1,9 @@
+name = "weightloss-app"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "weightloss-db"
+database_id = "b5ff4110-f0c5-457f-ba7e-1984c7e8ab6a"
