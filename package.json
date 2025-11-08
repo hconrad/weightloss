@@ -9,8 +9,8 @@
 		"deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare",
 		"cf-typegen": "wrangler types",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate:local": "wrangler d1 execute weightloss-db --local --file=./drizzle/migrations/0000_flaky_spectrum.sql",
-		"db:migrate:remote": "wrangler d1 execute weightloss-db --remote --file=./drizzle/migrations/0000_flaky_spectrum.sql"
+		"db:migrate:local": "wrangler d1 execute weightloss-db --local --file=./drizzle/migrations/0000_initial_schema.sql",
+		"db:migrate:remote": "wrangler d1 execute weightloss-db --remote --file=./drizzle/migrations/0000_initial_schema.sql"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-cloudflare": "^4.0.0",
