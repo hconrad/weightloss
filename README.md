@@ -70,6 +70,8 @@ The app features a retro 8-bit arcade aesthetic:
 - **SvelteKit** - Web framework
 - **Cloudflare Pages** - Static hosting
 - **Cloudflare D1** - SQLite database
+- **Cloudflare AI Gateway** - AI request routing and caching
+- **Anthropic Claude** - AI-powered features
 - **Drizzle ORM** - Type-safe database queries
 - **TypeScript** - Type safety
 - **Bcrypt** - Password hashing
@@ -86,6 +88,17 @@ weightloss/
 │   │   ├── db/
 │   │   │   ├── schema.ts      # Database schema (users + weight_entries)
 │   │   │   └── client.ts      # Database client
+│   │   ├── ai/                # AI module (DDD architecture)
+│   │   │   ├── domain/
+│   │   │   │   ├── AIProvider.ts    # Port interface
+│   │   │   │   └── types.ts         # Domain types
+│   │   │   ├── application/
+│   │   │   │   ├── AIService.ts     # Main AI service
+│   │   │   │   └── AIProviderFactory.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   └── CloudflareAIGatewayProvider.ts
+│   │   │   ├── config.ts      # AI configuration helper
+│   │   │   └── index.ts       # Barrel exports
 │   │   ├── config/
 │   │   │   └── whitelist.ts   # Email whitelist configuration
 │   │   ├── auth.ts            # Authentication utilities
@@ -133,7 +146,56 @@ For local development, the D1 database is created automatically when you run the
 npm run db:migrate:local
 ```
 
-### 4. Start Development Server
+### 4. Set Up AI (Optional)
+
+The app includes AI capabilities powered by Anthropic Claude via Cloudflare AI Gateway. To enable AI features:
+
+#### Create Cloudflare AI Gateway
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Select your account
+3. Navigate to **AI** → **AI Gateway** in the left sidebar
+4. Click **Create Gateway**
+5. Give it a name (e.g., `weightloss-ai-gateway`)
+6. Click **Create**
+7. Note your **Account ID** and **Gateway Slug** from the gateway URL
+
+#### Get Anthropic API Key
+
+1. Go to [Anthropic Console](https://console.anthropic.com/)
+2. Sign up or log in
+3. Navigate to **API Keys**
+4. Click **Create Key**
+5. Copy your API key (starts with `sk-ant-...`)
+
+#### Configure Environment Variables
+
+**For Local Development:**
+
+Create a `.dev.vars` file in your project root:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+CF_ACCOUNT_ID=your-cloudflare-account-id
+CF_AI_GATEWAY_SLUG=weightloss-ai-gateway
+```
+
+**For Production:**
+
+Add these as environment variables in Cloudflare Pages Dashboard:
+1. Go to Cloudflare Dashboard → Pages → Your Project
+2. Navigate to **Settings** → **Environment Variables**
+3. Add the three variables above for both Production and Preview environments
+
+#### AI Gateway Benefits
+
+- **Caching** - Cache AI responses to reduce costs
+- **Rate Limiting** - Control API usage
+- **Analytics** - Track requests and costs
+- **Logging** - Monitor all AI interactions
+- **Cost Control** - Set spending limits
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
@@ -270,6 +332,83 @@ CREATE TABLE weight_entries (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ```
+
+## AI Architecture
+
+The AI module follows **Domain-Driven Design (DDD)** principles with a clean, layered architecture:
+
+### Domain Layer (`src/lib/ai/domain/`)
+
+**Core business logic and interfaces - provider-agnostic**
+
+- `types.ts` - Domain value objects:
+  - `Message` - Chat message structure
+  - `AIRequest` - Standard request format
+  - `AIResponse` - Standard response format
+  - `AIError` - Domain-specific errors
+
+- `AIProvider.ts` - Port interface (Anti-Corruption Layer):
+  - Defines the contract all AI providers must implement
+  - Ensures the domain is isolated from external API changes
+
+### Application Layer (`src/lib/ai/application/`)
+
+**Orchestration and use cases**
+
+- `AIService.ts` - Main application service:
+  - `chat(request)` - Send multi-turn conversations
+  - `ask(question)` - Simple question/answer
+  - Entry point for all AI features in your app
+
+- `AIProviderFactory.ts` - Factory pattern:
+  - Creates appropriate provider based on configuration
+  - Easy to add new providers (OpenAI, Workers AI, etc.)
+
+### Infrastructure Layer (`src/lib/ai/infrastructure/`)
+
+**External integrations and adapters**
+
+- `CloudflareAIGatewayProvider.ts` - Cloudflare AI Gateway adapter:
+  - Implements the `AIProvider` interface
+  - Translates between domain types and Anthropic API format
+  - Handles Cloudflare AI Gateway routing
+  - Uses Claude 3.5 Haiku by default
+
+### Configuration (`src/lib/ai/config.ts`)
+
+Helper function to build provider config from environment variables:
+
+```typescript
+import { getAIConfig } from '$lib/ai';
+
+const config = getAIConfig(platform.env);
+```
+
+### Usage Example
+
+```typescript
+import { AIService, AIProviderFactory, getAIConfig } from '$lib/ai';
+
+// In your SvelteKit endpoint
+export async function POST({ request, platform }) {
+  // Create AI service
+  const config = getAIConfig(platform.env);
+  const provider = AIProviderFactory.create(config);
+  const ai = new AIService(provider);
+
+  // Use it!
+  const answer = await ai.ask('What are healthy weight loss tips?');
+
+  return json({ answer });
+}
+```
+
+### Why DDD?
+
+- **Separation of Concerns** - Business logic isolated from infrastructure
+- **Testability** - Easy to mock providers for testing
+- **Flexibility** - Swap providers without changing application code
+- **Future-Proof** - Add OpenAI, Workers AI, etc. without touching domain logic
 
 ## Managing the Email Whitelist
 
