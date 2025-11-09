@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { invalidateAll, goto } from '$app/navigation';
+	import { slide } from 'svelte/transition';
 	import WeightTrendChart from '$lib/components/WeightTrendChart.svelte';
 
 	export let data: PageData;
@@ -9,6 +10,7 @@
 	let weight = '';
 	let notes = '';
 	let isSubmitting = false;
+	let rosterExpanded = true;
 
 	async function addEntry() {
 		if (!weight || !date) return;
@@ -60,10 +62,11 @@
 		<!-- Active Players Roster -->
 		{#if data.activePlayers && data.activePlayers.length > 0}
 			<div class="roster pixel-border">
-				<div class="roster-header glow">
-					<span>◆◆◆ WHO'S PLAYING ◆◆◆</span>
-				</div>
-				<div class="roster-body">
+				<button class="roster-header glow" on:click={() => rosterExpanded = !rosterExpanded}>
+					<span>{rosterExpanded ? '▼' : '▶'} WHO'S PLAYING {rosterExpanded ? '▼' : '◀'}</span>
+				</button>
+				{#if rosterExpanded}
+				<div class="roster-body" transition:slide={{ duration: 300 }}>
 					{#each data.activePlayers as player}
 						<div class="player-card pixel-border" class:current-player={player.userId === data.user.id}>
 							<div class="player-info">
@@ -101,6 +104,7 @@
 						</div>
 					{/each}
 				</div>
+				{/if}
 			</div>
 		{/if}
 
@@ -292,6 +296,7 @@
 	}
 
 	.roster-header {
+		width: 100%;
 		background: linear-gradient(
 			90deg,
 			rgba(0, 255, 255, 0.2),
@@ -303,7 +308,19 @@
 		text-align: center;
 		font-size: 14px;
 		letter-spacing: 3px;
+		border: none;
 		border-bottom: 3px solid var(--neon-cyan);
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+	.roster-header:hover {
+		background: linear-gradient(
+			90deg,
+			rgba(0, 255, 255, 0.3),
+			rgba(0, 255, 255, 0.5),
+			rgba(0, 255, 255, 0.3)
+		);
 	}
 
 	.roster-body {
