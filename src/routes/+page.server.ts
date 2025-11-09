@@ -32,10 +32,14 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	// Calculate leaderboard
 	const leaderboard = await calculateLeaderboard(db);
 
+	// Get all active players
+	const activePlayers = await getActivePlayers(db);
+
 	return {
 		user: locals.user,
 		entries,
-		leaderboard
+		leaderboard,
+		activePlayers
 	};
 };
 
@@ -98,4 +102,55 @@ async function calculateLeaderboard(db: any): Promise<UserStats[]> {
 
 	// Return top 5
 	return userStats.slice(0, 5);
+}
+
+interface PlayerInfo {
+	userId: number;
+	firstName: string;
+	lastName: string;
+	latestWeight: number | null;
+	latestBMI: number | null;
+	latestDate: string | null;
+	entryCount: number;
+}
+
+async function getActivePlayers(db: any): Promise<PlayerInfo[]> {
+	// Get all users
+	const allUsers = await db.select().from(users);
+
+	const playerInfo: PlayerInfo[] = [];
+
+	for (const user of allUsers) {
+		// Get latest entry (newest)
+		const [latestEntry] = await db
+			.select()
+			.from(weightEntries)
+			.where(eq(weightEntries.userId, user.id))
+			.orderBy(desc(weightEntries.date))
+			.limit(1);
+
+		// Get total entry count
+		const allEntries = await db
+			.select()
+			.from(weightEntries)
+			.where(eq(weightEntries.userId, user.id));
+
+		// Include user if they have at least 1 entry
+		const info: PlayerInfo = {
+			userId: user.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			latestWeight: latestEntry ? latestEntry.weight : null,
+			latestBMI: latestEntry ? calculateBMI(latestEntry.weight, user.height) : null,
+			latestDate: latestEntry ? latestEntry.date : null,
+			entryCount: allEntries.length
+		};
+
+		playerInfo.push(info);
+	}
+
+	// Sort by name
+	playerInfo.sort((a, b) => a.firstName.localeCompare(b.firstName));
+
+	return playerInfo;
 }
