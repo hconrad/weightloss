@@ -6,6 +6,7 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 
 - 🎮 **Retro 8-bit Arcade Styling** - Dark theme with neon colors and CRT effects
 - 🏆 **Leaderboard** - BMI-based competition rankings with trophies
+- 📈 **Interactive Trend Charts** - D3-powered weight and BMI visualization
 - 🔒 **Email Whitelist** - Secure, invite-only signup
 - 📊 **BMI Tracking** - Automatic BMI calculation and progress tracking
 - 👤 **User Authentication** - Secure login with bcrypt password hashing
@@ -38,6 +39,21 @@ The leaderboard shows:
 - Number of weight entries
 - Overall improvement score with ranking
 
+### Interactive Trend Visualization
+
+The app includes a D3-powered trend chart to visualize progress over time:
+
+- **Dual-Axis Chart**: Simultaneously displays weight (pounds) and BMI on the same timeline
+- **Weight Line**: Solid neon magenta line showing weight progression
+- **BMI Line**: Dashed neon green line tracking BMI changes
+- **Smart Scaling**: Automatically adjusts Y-axis ranges based on your data
+- **Smooth Curves**: Uses monotone interpolation for cleaner visualization
+- **Data Points**: Interactive points marking each logged entry
+- **Retro Styling**: Glowing effects, arcade fonts, and neon colors matching the overall theme
+- **Minimum Requirement**: Requires at least 2 weight entries to display (shows "INSUFFICIENT DATA" message otherwise)
+
+The chart helps you visualize your weight loss journey at a glance, making it easy to spot trends and track progress toward your goals.
+
 ### Retro Arcade Styling
 
 The app features a retro 8-bit arcade aesthetic:
@@ -57,6 +73,7 @@ The app features a retro 8-bit arcade aesthetic:
 - **Drizzle ORM** - Type-safe database queries
 - **TypeScript** - Type safety
 - **Bcrypt** - Password hashing
+- **D3.js** - Data visualization and trend charts
 
 ## Project Structure
 
@@ -64,6 +81,8 @@ The app features a retro 8-bit arcade aesthetic:
 weightloss/
 ├── src/
 │   ├── lib/
+│   │   ├── components/
+│   │   │   └── WeightTrendChart.svelte  # D3 trend visualization
 │   │   ├── db/
 │   │   │   ├── schema.ts      # Database schema (users + weight_entries)
 │   │   │   └── client.ts      # Database client
@@ -72,7 +91,7 @@ weightloss/
 │   │   ├── auth.ts            # Authentication utilities
 │   │   └── bmi.ts             # BMI calculation and leaderboard logic
 │   ├── routes/
-│   │   ├── +page.svelte       # Main page with leaderboard
+│   │   ├── +page.svelte       # Main page with leaderboard & trend chart
 │   │   ├── +page.server.ts    # Server-side data loading
 │   │   ├── login/
 │   │   │   └── +page.svelte   # Login page
