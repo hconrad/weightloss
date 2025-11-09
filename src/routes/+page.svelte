@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { invalidateAll, goto } from '$app/navigation';
-	import { slide } from 'svelte/transition';
 	import WeightTrendChart from '$lib/components/WeightTrendChart.svelte';
+	import PlayerRoster from '$lib/components/PlayerRoster.svelte';
 
 	export let data: PageData;
 
@@ -10,7 +10,6 @@
 	let weight = '';
 	let notes = '';
 	let isSubmitting = false;
-	let rosterExpanded = true;
 
 	async function addEntry() {
 		if (!weight || !date) return;
@@ -60,53 +59,7 @@
 		</div>
 
 		<!-- Active Players Roster -->
-		{#if data.activePlayers && data.activePlayers.length > 0}
-			<div class="roster pixel-border">
-				<button class="roster-header glow" on:click={() => rosterExpanded = !rosterExpanded}>
-					<span>{rosterExpanded ? '▼' : '▶'} WHO'S PLAYING {rosterExpanded ? '▼' : '◀'}</span>
-				</button>
-				{#if rosterExpanded}
-				<div class="roster-body" transition:slide={{ duration: 300 }}>
-					{#each data.activePlayers as player}
-						<div class="player-card pixel-border" class:current-player={player.userId === data.user.id}>
-							<div class="player-info">
-								<div class="player-name glow">
-									{player.firstName.toUpperCase()} {player.lastName.charAt(0).toUpperCase()}.
-									{#if player.userId === data.user.id}
-										<span class="you-badge">(YOU)</span>
-									{/if}
-								</div>
-								<div class="player-stats">
-									{#if player.latestWeight !== null}
-										<div class="stat-item">
-											<span class="stat-label">LATEST:</span>
-											<span class="stat-value glow">{player.latestWeight} LBS</span>
-										</div>
-										<div class="stat-item">
-											<span class="stat-label">BMI:</span>
-											<span class="stat-value glow">{player.latestBMI?.toFixed(1)}</span>
-										</div>
-										<div class="stat-item">
-											<span class="stat-label">LOGGED:</span>
-											<span class="stat-value glow">{player.latestDate}</span>
-										</div>
-										<div class="stat-item">
-											<span class="stat-label">ENTRIES:</span>
-											<span class="stat-value glow">{player.entryCount}</span>
-										</div>
-									{:else}
-										<div class="no-entries">
-											<span class="glow blink">⚠ NO ENTRIES YET</span>
-										</div>
-									{/if}
-								</div>
-							</div>
-						</div>
-					{/each}
-				</div>
-				{/if}
-			</div>
-		{/if}
+		<PlayerRoster players={data.activePlayers} currentUserId={data.user.id} />
 
 		<!-- Leaderboard -->
 		{#if data.leaderboard && data.leaderboard.length > 0}
@@ -285,98 +238,6 @@
 	.logout-btn:hover:not(:disabled) {
 		background: rgba(255, 102, 0, 0.2);
 		box-shadow: 0 0 20px var(--neon-orange), inset 0 0 20px rgba(255, 102, 0, 0.3);
-	}
-
-	/* Roster Styles */
-	.roster {
-		background: rgba(0, 0, 0, 0.9);
-		border-color: var(--neon-cyan);
-		margin-bottom: 2rem;
-		overflow: hidden;
-	}
-
-	.roster-header {
-		width: 100%;
-		background: linear-gradient(
-			90deg,
-			rgba(0, 255, 255, 0.2),
-			rgba(0, 255, 255, 0.4),
-			rgba(0, 255, 255, 0.2)
-		);
-		color: var(--neon-cyan);
-		padding: 1rem;
-		text-align: center;
-		font-size: 14px;
-		letter-spacing: 3px;
-		border: none;
-		border-bottom: 3px solid var(--neon-cyan);
-		cursor: pointer;
-		transition: all 0.3s;
-	}
-
-	.roster-header:hover {
-		background: linear-gradient(
-			90deg,
-			rgba(0, 255, 255, 0.3),
-			rgba(0, 255, 255, 0.5),
-			rgba(0, 255, 255, 0.3)
-		);
-	}
-
-	.roster-body {
-		padding: 1.5rem;
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 1rem;
-	}
-
-	.player-card {
-		background: rgba(0, 0, 0, 0.8);
-		padding: 1rem;
-		border-color: var(--neon-cyan);
-		transition: all 0.3s;
-	}
-
-	.player-card:hover {
-		background: rgba(0, 255, 255, 0.05);
-		box-shadow: 0 0 20px var(--neon-cyan), inset 0 0 15px rgba(0, 255, 255, 0.2);
-	}
-
-	.player-card.current-player {
-		border-color: var(--neon-magenta);
-		background: rgba(255, 0, 255, 0.05);
-	}
-
-	.player-info {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.player-stats {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.8rem;
-	}
-
-	.stat-item {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-	}
-
-	.stat-label {
-		color: var(--neon-yellow);
-		font-size: 7px;
-		letter-spacing: 1px;
-	}
-
-	.no-entries {
-		grid-column: 1 / -1;
-		text-align: center;
-		padding: 1rem;
-		color: var(--neon-orange);
-		font-size: 9px;
 	}
 
 	/* Leaderboard Styles */
@@ -710,16 +571,6 @@
 
 		.section-title {
 			font-size: 11px;
-		}
-
-		.roster-header {
-			font-size: 11px;
-			letter-spacing: 2px;
-		}
-
-		.roster-body {
-			grid-template-columns: 1fr;
-			padding: 1rem;
 		}
 
 		.leaderboard-header {
