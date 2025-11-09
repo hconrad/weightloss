@@ -32,7 +32,9 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				error = 'Host is taking a break...';
+				// Show the actual error for debugging
+				error = data.details || data.error || 'Host is taking a break...';
+				console.error('Host greeting error:', data);
 				return;
 			}
 

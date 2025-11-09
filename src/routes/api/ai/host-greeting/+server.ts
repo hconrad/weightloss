@@ -51,6 +51,23 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			);
 		}
 
+		// Check for required environment variables
+		const missingVars = [];
+		if (!platform.env.ANTHROPIC_API_KEY) missingVars.push('ANTHROPIC_API_KEY');
+		if (!platform.env.CF_ACCOUNT_ID) missingVars.push('CF_ACCOUNT_ID');
+		if (!platform.env.CF_AI_GATEWAY_SLUG) missingVars.push('CF_AI_GATEWAY_SLUG');
+
+		if (missingVars.length > 0) {
+			console.error('Missing environment variables:', missingVars);
+			return json(
+				{
+					error: 'Missing required environment variables',
+					details: `Missing: ${missingVars.join(', ')}`
+				},
+				{ status: 500 }
+			);
+		}
+
 		const { leaderboard, userStats }: GreetingRequest = await request.json();
 
 		// Build context for the AI
