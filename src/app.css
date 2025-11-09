@@ -52,7 +52,7 @@ body::before {
 
 /* Retro glow effect */
 .glow {
-	text-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
+	text-shadow: 0 0 5px currentColor;
 }
 
 .pixel-border {
