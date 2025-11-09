@@ -176,9 +176,21 @@ npx wrangler pages project create weightloss-app --production-branch=main
 
 ### 5. Deploy to Cloudflare Pages
 
+Now deploying is simple with the built-in script:
+
 ```bash
-npm run build
-npx wrangler pages deploy .svelte-kit/cloudflare --project-name=weightloss-app --commit-dirty=true
+npm run deploy
+```
+
+This single command will:
+- Build your application for production
+- Deploy to Cloudflare Pages
+- Handle uncommitted changes automatically
+
+For production deployments with main branch tagging:
+
+```bash
+npm run deploy:production
 ```
 
 ### 6. Configure D1 Database Binding
@@ -211,13 +223,21 @@ You can also connect your GitHub repository to Cloudflare Pages for automatic de
 
 ## Available Scripts
 
+### Development
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run deploy` - Build and deploy to Cloudflare
+- `npm run preview` - Preview production build locally
+
+### Deployment
+- `npm run deploy` - Build and deploy to Cloudflare Pages (recommended)
+- `npm run deploy:production` - Build and deploy with main branch tag
+
+### Database
 - `npm run db:generate` - Generate new database migrations
 - `npm run db:migrate:local` - Run migrations on local database
 - `npm run db:migrate:remote` - Run migrations on remote database
+
+### Utilities
 - `npm run cf-typegen` - Generate Cloudflare Workers types
 
 ## Database Schema
@@ -294,6 +314,16 @@ compatibility_flags = ["nodejs_compat"]
 ```
 
 This is essential for password hashing to work in the Cloudflare Workers runtime.
+
+### Quick Deployment Workflow
+
+For quick updates after making changes:
+
+1. Make your code changes
+2. Run `npm run deploy`
+3. That's it! Your changes are live
+
+The deploy script handles building and deployment in one command, and allows uncommitted changes so you don't need to git commit first.
 
 ## License
 
