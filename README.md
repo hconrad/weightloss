@@ -5,12 +5,14 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 ## Features
 
 - 🎮 **Retro 8-bit Arcade Styling** - Dark theme with neon colors and CRT effects
-- 🏆 **Leaderboard** - BMI-based competition rankings with trophies
-- 📈 **Interactive Trend Charts** - D3-powered weight and BMI visualization
-- 🔒 **Email Whitelist** - Secure, invite-only signup
+- 🏆 **Multiple Competitions** - Create and participate in multiple weight loss competitions simultaneously
+- 🎯 **Competition-Centric Dashboard** - View leaderboards and progress for each competition separately
+- 📈 **Multi-Player Trend Charts** - D3-powered visualization showing all participants' progress on one chart
+- 🔒 **Competition Allowlists** - Each competition has its own invite-only participant list
 - 📊 **BMI Tracking** - Automatic BMI calculation and progress tracking
-- 👤 **User Authentication** - Secure login with bcrypt password hashing
-- 📝 **Weight Logging** - Track weight with dates and notes
+- 👤 **Admin System** - Admins can create competitions and manage allowlists
+- 🔐 **User Authentication** - Secure login with bcrypt password hashing
+- 📝 **Weight Logging** - Track weight with dates and notes (shared across all competitions)
 
 ## How It Works
 
@@ -18,41 +20,58 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 
 The app uses a secure authentication system with the following features:
 
-- **Admin System**: Only pre-approved admin emails can sign up (configured in `src/lib/config/admins.ts`)
+- **Admin System**: Pre-approved admin emails can sign up as admins (configured in `src/lib/config/admins.ts`)
+  - Admins can create competitions and manage competition allowlists
+  - Non-admin users can only sign up if their email is on at least one competition's allowlist
+- **Competition Allowlists**: Each competition has its own invite-only email list
+  - Users are automatically added as participants when they sign up if on a competition's allowlist
 - **Password Security**: Passwords are hashed using bcrypt with 10 salt rounds
 - **Session Management**: HTTP-only cookies for secure session handling (7-day expiration)
 - **Protected Routes**: Automatic redirection to login page for unauthenticated users
 
-### Leaderboard & Competition
+### Multiple Competitions & Leaderboards
 
-The app calculates a competitive leaderboard based on BMI improvement:
+Users can participate in multiple competitions simultaneously. Each competition has its own:
+- Start and end dates
+- Participant list (managed via competition-specific allowlists)
+- Leaderboard rankings
+- Competition details page
 
-1. **BMI Calculation**: Uses the formula `(weight in lbs / (height in inches)²) × 703`
-2. **Improvement Score**: Calculated as `(First BMI - Latest BMI) + Consistency Bonus`
-3. **Consistency Bonus**: Up to 2 points based on number of entries (0.1 points per entry)
-4. **Qualification**: Users need at least 2 weight entries to appear on the leaderboard
-5. **Rankings**: Top 5 users displayed with trophies for top 3 (Gold, Silver, Bronze)
+**Competition-Specific Leaderboards:**
+
+The app calculates a competitive leaderboard for each competition based on BMI improvement:
+
+1. **Date-Filtered Entries**: Only weight entries within the competition's date range are counted
+2. **BMI Calculation**: Uses the formula `(weight in lbs / (height in inches)²) × 703`
+3. **Improvement Score**: Calculated as `(First BMI - Latest BMI) + Consistency Bonus`
+4. **Consistency Bonus**: Up to 2 points based on number of entries (0.1 points per entry)
+5. **Qualification**: Users need at least 2 weight entries within the competition period to appear
+6. **Rankings**: Participants displayed with trophies for top 3 (🥇 Gold, 🥈 Silver, 🥉 Bronze)
 
 The leaderboard shows:
-- User's first and latest BMI
+- User's first and latest BMI (within competition dates)
 - BMI improvement (positive numbers = weight loss)
-- Number of weight entries
+- Number of weight entries during competition
 - Overall improvement score with ranking
 
-### Interactive Trend Visualization
+**Shared Weight Entries:**
+Weight entries are attached to users, not competitions. If you log weight at 180 lbs on January 1st, that entry counts for ALL competitions you're in that span that date.
 
-The app includes a D3-powered trend chart to visualize progress over time:
+### Multi-Player Progress Tracker
 
-- **Dual-Axis Chart**: Simultaneously displays weight (pounds) and BMI on the same timeline
-- **Weight Line**: Solid neon magenta line showing weight progression
-- **BMI Line**: Dashed neon green line tracking BMI changes
-- **Smart Scaling**: Automatically adjusts Y-axis ranges based on your data
+The app includes a D3-powered multi-player trend chart that displays all competition participants' progress on a single visualization:
+
+- **Multi-Player Lines**: Each participant gets a unique colored line (8-color neon palette)
+- **Competition Context**: Shows all participants in the current competition
+- **Weight Tracking**: Displays weight (pounds) progression over time for all players
+- **Color-Coded Legend**: Shows each player's name with their latest weight and assigned color
+- **Smart Scaling**: Automatically adjusts Y-axis ranges based on all participants' data
 - **Smooth Curves**: Uses monotone interpolation for cleaner visualization
-- **Data Points**: Interactive points marking each logged entry
-- **Retro Styling**: Glowing effects, arcade fonts, and neon colors matching the overall theme
-- **Minimum Requirement**: Requires at least 2 weight entries to display (shows "INSUFFICIENT DATA" message otherwise)
+- **Data Points**: Interactive points marking each logged entry for every player
+- **Retro Styling**: Glowing line effects, arcade fonts, and neon colors matching the overall theme
+- **Minimum Requirement**: Players need at least 2 weight entries to appear on the chart
 
-The chart helps you visualize your weight loss journey at a glance, making it easy to spot trends and track progress toward your goals.
+The multi-player chart makes it easy to compare progress across all participants at a glance, fostering friendly competition and motivation.
 
 ### Retro Arcade Styling
 
@@ -84,9 +103,15 @@ weightloss/
 ├── src/
 │   ├── lib/
 │   │   ├── components/
-│   │   │   └── WeightTrendChart.svelte  # D3 trend visualization
+│   │   │   ├── WeightTrendChart.svelte     # Multi-player D3 chart
+│   │   │   ├── Leaderboard.svelte          # Competition leaderboard
+│   │   │   ├── HostGreeting.svelte         # AI host greeting
+│   │   │   ├── AppHeader.svelte            # App header
+│   │   │   ├── AddWeightForm.svelte        # Weight entry form
+│   │   │   ├── WeightEntryList.svelte      # Weight entries list
+│   │   │   └── CompetitionSelector.svelte  # Competition dropdown
 │   │   ├── db/
-│   │   │   ├── schema.ts      # Database schema (users + weight_entries)
+│   │   │   ├── schema.ts      # Database schema (users, weight_entries, competitions, etc.)
 │   │   │   └── client.ts      # Database client
 │   │   ├── ai/                # AI module (DDD architecture)
 │   │   │   ├── domain/
@@ -102,10 +127,17 @@ weightloss/
 │   │   ├── config/
 │   │   │   └── admins.ts      # Admin email configuration
 │   │   ├── auth.ts            # Authentication utilities
-│   │   └── bmi.ts             # BMI calculation and leaderboard logic
+│   │   ├── bmi.ts             # BMI calculation and leaderboard logic
+│   │   └── competitions.ts    # Competition management functions
 │   ├── routes/
-│   │   ├── +page.svelte       # Main page with leaderboard & trend chart
+│   │   ├── +page.svelte       # Competition-centric dashboard
 │   │   ├── +page.server.ts    # Server-side data loading
+│   │   ├── competitions/
+│   │   │   ├── +page.svelte   # Competitions listing
+│   │   │   ├── +page.server.ts
+│   │   │   └── [id]/
+│   │   │       ├── +page.svelte   # Competition detail page
+│   │   │       └── +page.server.ts
 │   │   ├── login/
 │   │   │   └── +page.svelte   # Login page
 │   │   ├── signup/
@@ -115,6 +147,12 @@ weightloss/
 │   │       │   ├── signup/+server.ts  # Signup endpoint
 │   │       │   ├── login/+server.ts   # Login endpoint
 │   │       │   └── logout/+server.ts  # Logout endpoint
+│   │       ├── competitions/
+│   │       │   ├── +server.ts         # List/create competitions
+│   │       │   └── [id]/
+│   │       │       ├── +server.ts     # Get/update competition
+│   │       │       ├── join/+server.ts        # Join competition
+│   │       │       └── allowlist/+server.ts   # Manage allowlist
 │   │       └── weight/
 │   │           └── +server.ts # API endpoint for adding entries
 │   ├── hooks.server.ts        # Session management
@@ -304,7 +342,7 @@ You can also connect your GitHub repository to Cloudflare Pages for automatic de
 
 ## Database Schema
 
-The app uses two tables: `users` and `weight_entries`.
+The app uses five main tables: `users`, `weight_entries`, `competitions`, `competition_participants`, and `competition_allowlist`.
 
 ### Users Table
 
@@ -314,8 +352,9 @@ CREATE TABLE users (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL,  -- bcrypt hashed
-  height REAL NOT NULL,    -- height in inches
+  password TEXT NOT NULL,     -- bcrypt hashed
+  height REAL NOT NULL,       -- height in inches
+  is_admin INTEGER NOT NULL DEFAULT 0,  -- boolean flag for admin users
   created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ```
@@ -329,6 +368,44 @@ CREATE TABLE weight_entries (
   date TEXT NOT NULL,
   weight REAL NOT NULL,  -- weight in pounds
   notes TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+```
+
+### Competitions Table
+
+```sql
+CREATE TABLE competitions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  start_date TEXT NOT NULL,       -- ISO 8601 format (YYYY-MM-DD)
+  end_date TEXT,                  -- ISO 8601 format (YYYY-MM-DD), null for ongoing
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL DEFAULT 'active',  -- 'draft', 'active', 'completed'
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+```
+
+### Competition Participants Table
+
+```sql
+CREATE TABLE competition_participants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  status TEXT NOT NULL DEFAULT 'active',  -- 'active', 'inactive'
+  joined_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+```
+
+### Competition Allowlist Table
+
+```sql
+CREATE TABLE competition_allowlist (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  competition_id INTEGER NOT NULL REFERENCES competitions(id),
+  email TEXT NOT NULL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ```
@@ -421,6 +498,65 @@ This app uses an **admin email list** to control who can sign up as administrato
 3. Save and restart the dev server (or redeploy)
 
 See [ADMINS.md](./ADMINS.md) for detailed instructions.
+
+## Managing Competitions
+
+### Creating a Competition (Admin Only)
+
+Admins can create competitions via the API or UI:
+
+```bash
+POST /api/competitions
+{
+  "name": "January Weight Loss Challenge",
+  "description": "Let's start the new year strong!",
+  "startDate": "2025-01-01",
+  "endDate": "2025-01-31",
+  "status": "active"
+}
+```
+
+### Managing Competition Allowlists
+
+Each competition has its own allowlist of emails who can join:
+
+**Add emails to allowlist:**
+```bash
+POST /api/competitions/[id]/allowlist
+{
+  "emails": ["user@example.com", "another@example.com"]
+}
+```
+
+**View allowlist:**
+```bash
+GET /api/competitions/[id]/allowlist
+```
+
+**Remove email from allowlist:**
+```bash
+DELETE /api/competitions/[id]/allowlist
+{
+  "email": "user@example.com"
+}
+```
+
+### Joining a Competition
+
+Users on a competition's allowlist can join via:
+
+```bash
+POST /api/competitions/[id]/join
+```
+
+Or they're automatically added as participants when they sign up (if their email is on the allowlist).
+
+### Competition Dashboard
+
+Users can:
+- View all their competitions at `/competitions`
+- Switch between competitions using the selector on the main dashboard
+- View detailed competition info and full leaderboards at `/competitions/[id]`
 
 ## Development Tips
 
