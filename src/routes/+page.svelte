@@ -6,6 +6,7 @@
 	import WeightEntryList from '$lib/components/WeightEntryList.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import HostGreeting from '$lib/components/HostGreeting.svelte';
+	import ParticipantsBanner from '$lib/components/ParticipantsBanner.svelte';
 	import { calculateBMI } from '$lib/bmi';
 	import type { UserStats } from '$lib/bmi';
 
@@ -101,6 +102,9 @@
 
 			<!-- Multi-Player Progress Tracker -->
 			<WeightTrendChart players={data.playersForChart} />
+
+			<!-- All Participants Banner -->
+			<ParticipantsBanner players={data.playersForChart} />
 
 			<div class="game-screen">
 				<AddWeightForm />
