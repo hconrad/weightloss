@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { competitions, competitionParticipants, users, type Competition, type CompetitionParticipant, type NewCompetition, type NewCompetitionParticipant } from './db/schema';
+import { competitions, competitionParticipants, competitionAllowlist, users, type Competition, type CompetitionParticipant, type CompetitionAllowlist, type NewCompetition, type NewCompetitionParticipant, type NewCompetitionAllowlist } from './db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
 /**
@@ -158,4 +158,156 @@ export async function isCompetitionCreator(
 		.limit(1);
 
 	return !!competition;
+}
+
+/**
+ * Get all emails on a competition's allowlist
+ */
+export async function getCompetitionAllowlist(
+	db: DrizzleD1Database,
+	competitionId: number
+): Promise<CompetitionAllowlist[]> {
+	return await db
+		.select()
+		.from(competitionAllowlist)
+		.where(eq(competitionAllowlist.competitionId, competitionId));
+}
+
+/**
+ * Check if an email is on a competition's allowlist
+ */
+export async function isEmailOnAllowlist(
+	db: DrizzleD1Database,
+	email: string,
+	competitionId: number
+): Promise<boolean> {
+	const normalizedEmail = email.toLowerCase().trim();
+	const [entry] = await db
+		.select()
+		.from(competitionAllowlist)
+		.where(
+			and(
+				eq(competitionAllowlist.competitionId, competitionId),
+				eq(competitionAllowlist.email, normalizedEmail)
+			)
+		)
+		.limit(1);
+
+	return !!entry;
+}
+
+/**
+ * Check if an email is on ANY competition allowlist
+ */
+export async function isEmailOnAnyAllowlist(
+	db: DrizzleD1Database,
+	email: string
+): Promise<{ allowed: boolean; competitions: Competition[] }> {
+	const normalizedEmail = email.toLowerCase().trim();
+
+	// Get all allowlist entries for this email
+	const entries = await db
+		.select({
+			allowlist: competitionAllowlist,
+			competition: competitions
+		})
+		.from(competitionAllowlist)
+		.innerJoin(competitions, eq(competitionAllowlist.competitionId, competitions.id))
+		.where(eq(competitionAllowlist.email, normalizedEmail));
+
+	return {
+		allowed: entries.length > 0,
+		competitions: entries.map(entry => entry.competition)
+	};
+}
+
+/**
+ * Add an email to a competition's allowlist
+ */
+export async function addEmailToAllowlist(
+	db: DrizzleD1Database,
+	competitionId: number,
+	email: string
+): Promise<CompetitionAllowlist> {
+	const normalizedEmail = email.toLowerCase().trim();
+
+	// Check if already exists
+	const exists = await isEmailOnAllowlist(db, email, competitionId);
+	if (exists) {
+		throw new Error('Email is already on the allowlist');
+	}
+
+	const [entry] = await db
+		.insert(competitionAllowlist)
+		.values({
+			competitionId,
+			email: normalizedEmail
+		})
+		.returning();
+
+	return entry;
+}
+
+/**
+ * Remove an email from a competition's allowlist
+ */
+export async function removeEmailFromAllowlist(
+	db: DrizzleD1Database,
+	competitionId: number,
+	email: string
+): Promise<boolean> {
+	const normalizedEmail = email.toLowerCase().trim();
+
+	const result = await db
+		.delete(competitionAllowlist)
+		.where(
+			and(
+				eq(competitionAllowlist.competitionId, competitionId),
+				eq(competitionAllowlist.email, normalizedEmail)
+			)
+		)
+		.returning();
+
+	return result.length > 0;
+}
+
+/**
+ * Add multiple emails to a competition's allowlist
+ */
+export async function addMultipleEmailsToAllowlist(
+	db: DrizzleD1Database,
+	competitionId: number,
+	emails: string[]
+): Promise<{ added: number; skipped: number; errors: string[] }> {
+	const results = {
+		added: 0,
+		skipped: 0,
+		errors: [] as string[]
+	};
+
+	for (const email of emails) {
+		try {
+			const normalizedEmail = email.toLowerCase().trim();
+
+			// Check if already exists
+			const exists = await isEmailOnAllowlist(db, normalizedEmail, competitionId);
+			if (exists) {
+				results.skipped++;
+				continue;
+			}
+
+			await db
+				.insert(competitionAllowlist)
+				.values({
+					competitionId,
+					email: normalizedEmail
+				});
+
+			results.added++;
+		} catch (error) {
+			results.errors.push(`Failed to add ${email}: ${error}`);
+		}
+	}
+
+	return results;
 }

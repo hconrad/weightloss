@@ -3,6 +3,7 @@ import { getDb } from '$lib/db/client';
 import { users } from '$lib/db/schema';
 import { hashPassword, setSessionCookie } from '$lib/auth';
 import { isAdminEmail } from '$lib/config/admins';
+import { isEmailOnAnyAllowlist, addCompetitionParticipant } from '$lib/competitions';
 import { eq } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
@@ -22,17 +23,21 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 			);
 		}
 
+		const db = getDb(platform.env.DB);
+
 		// Check if email is an admin email
-		// TODO: In the future, also check if email is on any competition allowlist
 		const isAdmin = isAdminEmail(email);
-		if (!isAdmin) {
+
+		// Check if email is on any competition allowlist
+		const allowlistCheck = await isEmailOnAnyAllowlist(db, email);
+
+		// User must be either an admin OR on a competition allowlist
+		if (!isAdmin && !allowlistCheck.allowed) {
 			return json(
 				{ error: 'This email is not authorized. Please contact the administrator for access.' },
 				{ status: 403 }
 			);
 		}
-
-		const db = getDb(platform.env.DB);
 
 		// Check if user already exists
 		const existingUser = await db
@@ -61,6 +66,18 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 			})
 			.returning();
 
+		// If user signed up via competition allowlist, add them to those competitions
+		if (!isAdmin && allowlistCheck.allowed) {
+			for (const competition of allowlistCheck.competitions) {
+				try {
+					await addCompetitionParticipant(db, competition.id, newUser.id, 'active');
+				} catch (error) {
+					console.error(`Failed to add user to competition ${competition.id}:`, error);
+					// Continue even if one fails
+				}
+			}
+		}
+
 		// Set session cookie
 		setSessionCookie({ cookies, platform } as any, newUser.id);
 
@@ -72,7 +89,11 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 				lastName: newUser.lastName,
 				email: newUser.email,
 				height: newUser.height
-			}
+			},
+			competitions: allowlistCheck.competitions.map(c => ({
+				id: c.id,
+				name: c.name
+			}))
 		});
 	} catch (error) {
 		console.error('Signup error:', error);
