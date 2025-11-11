@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 			user: locals.user,
 			entries: [],
 			leaderboard: [],
-			activePlayers: [],
+			playersForChart: [],
 			competitions: [],
 			currentCompetition: null
 		};
@@ -41,7 +41,7 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 			user: locals.user,
 			entries,
 			leaderboard: [],
-			activePlayers: [],
+			playersForChart: [],
 			competitions: [],
 			currentCompetition: null
 		};
@@ -84,36 +84,33 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 		  )
 		: [];
 
-	// Get competition participants for "Who's Playing"
+	// Get competition participants for the chart
 	const participants = currentCompetition
 		? await getCompetitionParticipants(db, currentCompetition.id)
 		: [];
 
-	// Convert participants to activePlayers format with weight entry data
-	const activePlayers = await Promise.all(
+	// Prepare player data for the multi-player chart
+	const playersForChart = await Promise.all(
 		participants.map(async (p) => {
-			// Get latest weight entry for this user
-			const [latestEntry] = await db
-				.select()
-				.from(weightEntries)
-				.where(eq(weightEntries.userId, p.user.id))
-				.orderBy(desc(weightEntries.date))
-				.limit(1);
-
-			// Get total entry count
+			// Get all weight entries for this user
 			const allEntries = await db
 				.select()
 				.from(weightEntries)
-				.where(eq(weightEntries.userId, p.user.id));
+				.where(eq(weightEntries.userId, p.user.id))
+				.orderBy(desc(weightEntries.date));
+
+			// Get latest weight entry
+			const latestWeight = allEntries.length > 0 ? allEntries[0].weight : null;
 
 			return {
 				userId: p.user.id,
 				firstName: p.user.firstName,
 				lastName: p.user.lastName,
-				latestWeight: latestEntry ? latestEntry.weight : null,
-				latestBMI: latestEntry ? calculateBMI(latestEntry.weight, p.user.height) : null,
-				latestDate: latestEntry ? latestEntry.date : null,
-				entryCount: allEntries.length
+				entries: allEntries.map((e) => ({
+					date: e.date,
+					weight: e.weight
+				})),
+				latestWeight
 			};
 		})
 	);
@@ -122,7 +119,7 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 		user: locals.user,
 		entries,
 		leaderboard,
-		activePlayers,
+		playersForChart,
 		competitions,
 		currentCompetition
 	};

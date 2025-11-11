@@ -2,19 +2,39 @@
 	import { onMount } from 'svelte';
 	import * as d3 from 'd3';
 
-	export let entries: Array<{ date: string; weight: number }> = [];
-	export let height: number;
+	// Accept multiple players' data
+	export let players: Array<{
+		userId: number;
+		firstName: string;
+		lastName: string;
+		entries: Array<{ date: string; weight: number }>;
+		latestWeight: number | null;
+	}> = [];
 
 	let chartContainer: HTMLDivElement;
 
+	// Color palette for different players
+	const colors = [
+		'#ff00ff', // magenta
+		'#00ffff', // cyan
+		'#39ff14', // green
+		'#ffff00', // yellow
+		'#ff9f1c', // orange
+		'#ff006e', // pink
+		'#8338ec', // purple
+		'#00f5ff' // bright cyan
+	];
+
 	onMount(() => {
-		if (entries.length < 2) return;
+		// Check if any player has at least 2 entries
+		const hasData = players.some((p) => p.entries.length >= 2);
+		if (!hasData) return;
 
 		// Clear any existing chart
 		d3.select(chartContainer).selectAll('*').remove();
 
 		// Dimensions
-		const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+		const margin = { top: 20, right: 150, bottom: 40, left: 50 };
 		const width = chartContainer.clientWidth - margin.left - margin.right;
 		const chartHeight = 300 - margin.top - margin.bottom;
 
@@ -27,54 +47,52 @@
 			.append('g')
 			.attr('transform', `translate(${margin.left},${margin.top})`);
 
-		// Parse dates and sort
-		const data = entries
-			.map((d) => ({
-				date: new Date(d.date),
-				weight: d.weight
-			}))
-			.sort((a, b) => a.date.getTime() - b.date.getTime());
+		// Prepare data for all players
+		const allData: Array<{
+			player: string;
+			userId: number;
+			date: Date;
+			weight: number;
+			color: string;
+		}> = [];
 
-		// Calculate BMI for each entry
-		const dataWithBMI = data.map((d) => ({
-			...d,
-			bmi: (d.weight / (height * height)) * 703
-		}));
+		let minDate: Date | null = null;
+		let maxDate: Date | null = null;
+		let minWeight = Infinity;
+		let maxWeight = -Infinity;
+
+		players.forEach((player, index) => {
+			if (player.entries.length < 2) return;
+
+			const color = colors[index % colors.length];
+			const playerName = `${player.firstName} ${player.lastName}`;
+
+			player.entries.forEach((entry) => {
+				const date = new Date(entry.date);
+				allData.push({
+					player: playerName,
+					userId: player.userId,
+					date,
+					weight: entry.weight,
+					color
+				});
+
+				if (!minDate || date < minDate) minDate = date;
+				if (!maxDate || date > maxDate) maxDate = date;
+				if (entry.weight < minWeight) minWeight = entry.weight;
+				if (entry.weight > maxWeight) maxWeight = entry.weight;
+			});
+		});
+
+		if (!minDate || !maxDate) return;
 
 		// Scales
-		const x = d3
-			.scaleTime()
-			.domain(d3.extent(data, (d) => d.date) as [Date, Date])
-			.range([0, width]);
+		const x = d3.scaleTime().domain([minDate, maxDate]).range([0, width]);
 
-		const yWeight = d3
+		const y = d3
 			.scaleLinear()
-			.domain([
-				d3.min(data, (d) => d.weight)! - 5,
-				d3.max(data, (d) => d.weight)! + 5
-			])
+			.domain([minWeight - 5, maxWeight + 5])
 			.range([chartHeight, 0]);
-
-		const yBMI = d3
-			.scaleLinear()
-			.domain([
-				d3.min(dataWithBMI, (d) => d.bmi)! - 2,
-				d3.max(dataWithBMI, (d) => d.bmi)! + 2
-			])
-			.range([chartHeight, 0]);
-
-		// Line generators
-		const lineWeight = d3
-			.line<{ date: Date; weight: number }>()
-			.x((d) => x(d.date))
-			.y((d) => yWeight(d.weight))
-			.curve(d3.curveMonotoneX);
-
-		const lineBMI = d3
-			.line<{ date: Date; bmi: number }>()
-			.x((d) => x(d.date))
-			.y((d) => yBMI(d.bmi))
-			.curve(d3.curveMonotoneX);
 
 		// Grid lines
 		svg
@@ -83,7 +101,7 @@
 			.attr('opacity', 0.1)
 			.call(
 				d3
-					.axisLeft(yWeight)
+					.axisLeft(y)
 					.tickSize(-width)
 					.tickFormat(() => '')
 			);
@@ -100,68 +118,12 @@
 		// Y Axis (Weight)
 		svg
 			.append('g')
-			.call(d3.axisLeft(yWeight).ticks(5))
-			.style('color', '#ff00ff')
+			.call(d3.axisLeft(y).ticks(5))
+			.style('color', '#00ffff')
 			.style('font-family', '"Press Start 2P", monospace')
 			.style('font-size', '8px');
 
-		// Y Axis (BMI) on right
-		svg
-			.append('g')
-			.attr('transform', `translate(${width},0)`)
-			.call(d3.axisRight(yBMI).ticks(5))
-			.style('color', '#39ff14')
-			.style('font-family', '"Press Start 2P", monospace')
-			.style('font-size', '8px');
-
-		// Weight line
-		svg
-			.append('path')
-			.datum(data)
-			.attr('fill', 'none')
-			.attr('stroke', '#ff00ff')
-			.attr('stroke-width', 3)
-			.attr('d', lineWeight)
-			.style('filter', 'drop-shadow(0 0 5px #ff00ff)');
-
-		// BMI line
-		svg
-			.append('path')
-			.datum(dataWithBMI)
-			.attr('fill', 'none')
-			.attr('stroke', '#39ff14')
-			.attr('stroke-width', 2)
-			.attr('stroke-dasharray', '5,5')
-			.attr('d', lineBMI)
-			.style('filter', 'drop-shadow(0 0 5px #39ff14)');
-
-		// Weight points
-		svg
-			.selectAll('.dot-weight')
-			.data(data)
-			.enter()
-			.append('circle')
-			.attr('class', 'dot-weight')
-			.attr('cx', (d) => x(d.date))
-			.attr('cy', (d) => yWeight(d.weight))
-			.attr('r', 4)
-			.attr('fill', '#ff00ff')
-			.style('filter', 'drop-shadow(0 0 3px #ff00ff)');
-
-		// BMI points
-		svg
-			.selectAll('.dot-bmi')
-			.data(dataWithBMI)
-			.enter()
-			.append('circle')
-			.attr('class', 'dot-bmi')
-			.attr('cx', (d) => x(d.date))
-			.attr('cy', (d) => yBMI(d.bmi))
-			.attr('r', 3)
-			.attr('fill', '#39ff14')
-			.style('filter', 'drop-shadow(0 0 3px #39ff14)');
-
-		// Labels
+		// Y Axis Label
 		svg
 			.append('text')
 			.attr('transform', 'rotate(-90)')
@@ -169,62 +131,82 @@
 			.attr('x', 0 - chartHeight / 2)
 			.attr('dy', '1em')
 			.style('text-anchor', 'middle')
-			.style('fill', '#ff00ff')
+			.style('fill', '#00ffff')
 			.style('font-family', '"Press Start 2P", monospace')
 			.style('font-size', '8px')
 			.text('WEIGHT (LBS)');
 
-		svg
-			.append('text')
-			.attr('transform', `rotate(-90) translate(${-chartHeight / 2}, ${width + margin.right + 10})`)
-			.attr('dy', '1em')
-			.style('text-anchor', 'middle')
-			.style('fill', '#39ff14')
-			.style('font-family', '"Press Start 2P", monospace')
-			.style('font-size', '8px')
-			.text('BMI');
+		// Group data by player
+		const playerData = d3.group(allData, (d) => d.player);
+
+		// Line generator
+		const line = d3
+			.line<{ date: Date; weight: number }>()
+			.x((d) => x(d.date))
+			.y((d) => y(d.weight))
+			.curve(d3.curveMonotoneX);
+
+		// Draw lines for each player
+		playerData.forEach((entries, playerName) => {
+			const sortedEntries = entries.sort((a, b) => a.date.getTime() - b.date.getTime());
+			const color = sortedEntries[0].color;
+
+			// Draw line
+			svg
+				.append('path')
+				.datum(sortedEntries)
+				.attr('fill', 'none')
+				.attr('stroke', color)
+				.attr('stroke-width', 3)
+				.attr('d', line)
+				.style('filter', `drop-shadow(0 0 5px ${color})`);
+
+			// Draw points
+			svg
+				.selectAll(`.dot-${sortedEntries[0].userId}`)
+				.data(sortedEntries)
+				.enter()
+				.append('circle')
+				.attr('class', `dot-${sortedEntries[0].userId}`)
+				.attr('cx', (d) => x(d.date))
+				.attr('cy', (d) => y(d.weight))
+				.attr('r', 4)
+				.attr('fill', color)
+				.style('filter', `drop-shadow(0 0 3px ${color})`);
+		});
 
 		// Legend
-		const legend = svg.append('g').attr('transform', `translate(${width - 150}, 0)`);
+		const legend = svg.append('g').attr('transform', `translate(${width + 10}, 0)`);
 
-		legend
-			.append('line')
-			.attr('x1', 0)
-			.attr('x2', 30)
-			.attr('y1', 0)
-			.attr('y2', 0)
-			.attr('stroke', '#ff00ff')
-			.attr('stroke-width', 3);
+		players.forEach((player, index) => {
+			if (player.entries.length < 2) return;
 
-		legend
-			.append('text')
-			.attr('x', 35)
-			.attr('y', 0)
-			.attr('dy', '.35em')
-			.style('fill', '#ff00ff')
-			.style('font-family', '"Press Start 2P", monospace')
-			.style('font-size', '8px')
-			.text('WEIGHT');
+			const color = colors[index % colors.length];
+			const yOffset = index * 25;
+			const playerName = `${player.firstName} ${player.lastName}`;
+			const latestWeight = player.latestWeight ? `${player.latestWeight.toFixed(1)}` : 'N/A';
 
-		legend
-			.append('line')
-			.attr('x1', 0)
-			.attr('x2', 30)
-			.attr('y1', 20)
-			.attr('y2', 20)
-			.attr('stroke', '#39ff14')
-			.attr('stroke-width', 2)
-			.attr('stroke-dasharray', '5,5');
+			// Color line
+			legend
+				.append('line')
+				.attr('x1', 0)
+				.attr('x2', 20)
+				.attr('y1', yOffset)
+				.attr('y2', yOffset)
+				.attr('stroke', color)
+				.attr('stroke-width', 3);
 
-		legend
-			.append('text')
-			.attr('x', 35)
-			.attr('y', 20)
-			.attr('dy', '.35em')
-			.style('fill', '#39ff14')
-			.style('font-family', '"Press Start 2P", monospace')
-			.style('font-size', '8px')
-			.text('BMI');
+			// Player name + latest weight
+			legend
+				.append('text')
+				.attr('x', 25)
+				.attr('y', yOffset)
+				.attr('dy', '.35em')
+				.style('fill', color)
+				.style('font-family', '"Press Start 2P", monospace')
+				.style('font-size', '7px')
+				.text(`${playerName}: ${latestWeight} lbs`);
+		});
 	});
 </script>
 
@@ -233,10 +215,10 @@
 		<span>▼▼▼ PROGRESS TRACKER ▼▼▼</span>
 	</div>
 	<div class="chart-body">
-		{#if entries.length < 2}
+		{#if !players.some((p) => p.entries.length >= 2)}
 			<div class="no-data">
 				<p class="glow">⚠ INSUFFICIENT DATA</p>
-				<p>ADD MORE WEIGHT ENTRIES TO SEE TREND</p>
+				<p>PLAYERS NEED AT LEAST 2 WEIGHT ENTRIES TO SEE TRENDS</p>
 			</div>
 		{:else}
 			<div bind:this={chartContainer} class="chart"></div>

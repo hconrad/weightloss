@@ -1,13 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import WeightTrendChart from '$lib/components/WeightTrendChart.svelte';
-	import PlayerRoster from '$lib/components/PlayerRoster.svelte';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import AddWeightForm from '$lib/components/AddWeightForm.svelte';
 	import WeightEntryList from '$lib/components/WeightEntryList.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import HostGreeting from '$lib/components/HostGreeting.svelte';
-	import CompetitionSelector from '$lib/components/CompetitionSelector.svelte';
 	import { calculateBMI } from '$lib/bmi';
 	import type { UserStats } from '$lib/bmi';
 
@@ -98,14 +96,11 @@
 			<!-- AI Host Greeting -->
 			<HostGreeting leaderboard={data.leaderboard} {userStats} />
 
-			<!-- Active Players Roster -->
-			<PlayerRoster players={data.activePlayers} currentUserId={data.user.id} />
-
 			<!-- Leaderboard -->
 			<Leaderboard leaderboard={data.leaderboard} currentUserId={data.user.id} />
 
-			<!-- Trend Chart -->
-			<WeightTrendChart entries={data.entries} height={data.user.height} />
+			<!-- Multi-Player Progress Tracker -->
+			<WeightTrendChart players={data.playersForChart} />
 
 			<div class="game-screen">
 				<AddWeightForm />
