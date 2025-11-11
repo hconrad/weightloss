@@ -4,6 +4,7 @@ import { getDb } from '$lib/db/client';
 import { weightEntries, users } from '$lib/db/schema';
 import { desc, eq, asc } from 'drizzle-orm';
 import { calculateBMI, calculateImprovementScore, type UserStats } from '$lib/bmi';
+import { getUserCompetitions } from '$lib/competitions';
 
 export const load: PageServerLoad = async ({ platform, locals }) => {
 	// Require authentication
@@ -15,7 +16,8 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 		return {
 			user: locals.user,
 			entries: [],
-			leaderboard: []
+			leaderboard: [],
+			competitions: []
 		};
 	}
 
@@ -35,11 +37,15 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	// Get all active players
 	const activePlayers = await getActivePlayers(db);
 
+	// Get user's competitions
+	const competitions = await getUserCompetitions(db, locals.user.id);
+
 	return {
 		user: locals.user,
 		entries,
 		leaderboard,
-		activePlayers
+		activePlayers,
+		competitions
 	};
 };
 

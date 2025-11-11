@@ -7,6 +7,7 @@
 	import WeightEntryList from '$lib/components/WeightEntryList.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import HostGreeting from '$lib/components/HostGreeting.svelte';
+	import CompetitionSelector from '$lib/components/CompetitionSelector.svelte';
 	import { calculateBMI } from '$lib/bmi';
 	import type { UserStats } from '$lib/bmi';
 
@@ -57,6 +58,9 @@
 
 		<!-- AI Host Greeting -->
 		<HostGreeting leaderboard={data.leaderboard} {userStats} />
+
+		<!-- Competition Selector -->
+		<CompetitionSelector competitions={data.competitions} />
 
 		<!-- Active Players Roster -->
 		<PlayerRoster players={data.activePlayers} currentUserId={data.user.id} />

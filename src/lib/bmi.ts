@@ -54,3 +54,84 @@ export function calculateImprovementScore(stats: UserStats): number {
 
 	return bmiImprovement + consistencyBonus;
 }
+
+/**
+ * Calculate leaderboard for a specific competition
+ * Only includes participants and weight entries within the competition date range
+ */
+export async function calculateCompetitionLeaderboard(
+	db: any,
+	competitionId: number,
+	startDate: string,
+	endDate: string | null
+): Promise<UserStats[]> {
+	// Import needed types/functions at runtime
+	const { getCompetitionParticipants } = await import('./competitions');
+	const { weightEntries } = await import('./db/schema');
+	const { eq, and, gte, lte, asc, desc } = await import('drizzle-orm');
+
+	// Get all participants
+	const participants = await getCompetitionParticipants(db, competitionId);
+	const userStats: UserStats[] = [];
+
+	for (const participant of participants) {
+		const user = participant.user;
+
+		// Build date filter
+		const dateFilters = [eq(weightEntries.userId, user.id), gte(weightEntries.date, startDate)];
+		if (endDate) {
+			dateFilters.push(lte(weightEntries.date, endDate));
+		}
+
+		// Get first entry within date range (oldest)
+		const [firstEntry] = await db
+			.select()
+			.from(weightEntries)
+			.where(and(...dateFilters))
+			.orderBy(asc(weightEntries.date))
+			.limit(1);
+
+		// Get latest entry within date range (newest)
+		const [latestEntry] = await db
+			.select()
+			.from(weightEntries)
+			.where(and(...dateFilters))
+			.orderBy(desc(weightEntries.date))
+			.limit(1);
+
+		// Get total entry count within date range
+		const allEntries = await db
+			.select()
+			.from(weightEntries)
+			.where(and(...dateFilters));
+
+		// Only include users with at least 2 entries (need a trend)
+		if (firstEntry && latestEntry && allEntries.length >= 2) {
+			const firstBMI = calculateBMI(firstEntry.weight, user.height);
+			const latestBMI = calculateBMI(latestEntry.weight, user.height);
+
+			const stats: UserStats = {
+				userId: user.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				height: user.height,
+				firstWeight: firstEntry.weight,
+				latestWeight: latestEntry.weight,
+				firstBMI,
+				latestBMI,
+				bmiChange: firstBMI - latestBMI,
+				weightChange: firstEntry.weight - latestEntry.weight,
+				entryCount: allEntries.length
+			};
+
+			userStats.push(stats);
+		}
+	}
+
+	// Sort by improvement score (highest improvement first)
+	userStats.sort((a, b) => {
+		return calculateImprovementScore(b) - calculateImprovementScore(a);
+	});
+
+	return userStats;
+}

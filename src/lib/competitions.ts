@@ -19,6 +19,35 @@ export async function getUserCompetitions(db: DrizzleD1Database, userId: number)
 }
 
 /**
+ * Get available competitions a user can join (on allowlist but not yet joined)
+ */
+export async function getAvailableCompetitions(
+	db: DrizzleD1Database,
+	userEmail: string,
+	userId: number
+): Promise<Competition[]> {
+	const normalizedEmail = userEmail.toLowerCase().trim();
+
+	// Get competitions user is on the allowlist for
+	const allowedCompetitions = await db
+		.select({
+			competition: competitions
+		})
+		.from(competitionAllowlist)
+		.innerJoin(competitions, eq(competitionAllowlist.competitionId, competitions.id))
+		.where(eq(competitionAllowlist.email, normalizedEmail));
+
+	// Get competitions user is already a participant in
+	const participatingCompetitions = await getUserCompetitions(db, userId);
+	const participatingIds = new Set(participatingCompetitions.map(c => c.id));
+
+	// Filter out competitions they're already in
+	return allowedCompetitions
+		.map(row => row.competition)
+		.filter(comp => !participatingIds.has(comp.id));
+}
+
+/**
  * Get all competitions (admin view)
  */
 export async function getAllCompetitions(db: DrizzleD1Database): Promise<Competition[]> {
