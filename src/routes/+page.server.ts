@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { getDb } from '$lib/db/client';
 import { weightEntries } from '$lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
-import { calculateCompetitionLeaderboard } from '$lib/bmi';
+import { calculateCompetitionLeaderboard, calculateBMI } from '$lib/bmi';
 import { getUserCompetitions, getCompetitionById, getCompetitionParticipants } from '$lib/competitions';
 
 export const load: PageServerLoad = async ({ platform, locals, url }) => {
@@ -89,16 +89,34 @@ export const load: PageServerLoad = async ({ platform, locals, url }) => {
 		? await getCompetitionParticipants(db, currentCompetition.id)
 		: [];
 
-	// Convert participants to activePlayers format
-	const activePlayers = participants.map(p => ({
-		userId: p.user.id,
-		firstName: p.user.firstName,
-		lastName: p.user.lastName,
-		latestWeight: null, // We can calculate this if needed
-		latestBMI: null,
-		latestDate: null,
-		entryCount: 0
-	}));
+	// Convert participants to activePlayers format with weight entry data
+	const activePlayers = await Promise.all(
+		participants.map(async (p) => {
+			// Get latest weight entry for this user
+			const [latestEntry] = await db
+				.select()
+				.from(weightEntries)
+				.where(eq(weightEntries.userId, p.user.id))
+				.orderBy(desc(weightEntries.date))
+				.limit(1);
+
+			// Get total entry count
+			const allEntries = await db
+				.select()
+				.from(weightEntries)
+				.where(eq(weightEntries.userId, p.user.id));
+
+			return {
+				userId: p.user.id,
+				firstName: p.user.firstName,
+				lastName: p.user.lastName,
+				latestWeight: latestEntry ? latestEntry.weight : null,
+				latestBMI: latestEntry ? calculateBMI(latestEntry.weight, p.user.height) : null,
+				latestDate: latestEntry ? latestEntry.date : null,
+				entryCount: allEntries.length
+			};
+		})
+	);
 
 	return {
 		user: locals.user,
