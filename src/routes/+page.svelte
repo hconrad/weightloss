@@ -20,8 +20,8 @@
 			return leaderboardEntry;
 		}
 
-		// If user has at least 2 entries, calculate their stats
-		if (data.entries.length >= 2) {
+		// If user has at least 1 entry, calculate their stats
+		if (data.entries.length >= 1) {
 			const sortedEntries = [...data.entries].sort(
 				(a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
 			);

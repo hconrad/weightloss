@@ -105,8 +105,8 @@ export async function calculateCompetitionLeaderboard(
 			.from(weightEntries)
 			.where(and(...dateFilters));
 
-		// Only include users with at least 2 entries (need a trend)
-		if (firstEntry && latestEntry && allEntries.length >= 2) {
+		// Include users with at least 1 entry
+		if (firstEntry && latestEntry && allEntries.length >= 1) {
 			const firstBMI = calculateBMI(firstEntry.weight, user.height);
 			const latestBMI = calculateBMI(latestEntry.weight, user.height);
 
@@ -119,6 +119,7 @@ export async function calculateCompetitionLeaderboard(
 				latestWeight: latestEntry.weight,
 				firstBMI,
 				latestBMI,
+				// For users with only 1 entry, bmiChange and weightChange will be 0
 				bmiChange: firstBMI - latestBMI,
 				weightChange: firstEntry.weight - latestEntry.weight,
 				entryCount: allEntries.length

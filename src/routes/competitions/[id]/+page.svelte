@@ -115,7 +115,7 @@
 		{:else}
 			<div class="empty-state">
 				<p>🏃 No rankings yet!</p>
-				<p>Participants need at least 2 weight entries within the competition period to appear on the leaderboard.</p>
+				<p>Participants need at least 1 weight entry within the competition period to appear on the leaderboard.</p>
 			</div>
 		{/if}
 	</section>
