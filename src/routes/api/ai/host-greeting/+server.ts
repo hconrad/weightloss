@@ -75,7 +75,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const userFullName = `${locals.user.firstName} ${locals.user.lastName}`;
 
 		let context = `Current player: ${userFullName}\n\n`;
-		context += `LEADERBOARD - TOP 5:\n`;
+		context += `LEADERBOARD - TOP 5 (Ranked by performance, #1 is FIRST PLACE):\n`;
+		context += `NOTE: Positive BMI Change = weight loss = GOOD performance. Higher rank number = worse placement.\n\n`;
 
 		if (leaderboard && leaderboard.length > 0) {
 			leaderboard.forEach((player, index) => {
