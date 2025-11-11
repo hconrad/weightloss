@@ -56,26 +56,63 @@
 	<div class="arcade-border">
 		<AppHeader userName={data.user.firstName} />
 
-		<!-- AI Host Greeting -->
-		<HostGreeting leaderboard={data.leaderboard} {userStats} />
+		{#if !data.currentCompetition}
+			<!-- No Competition State -->
+			<div class="no-competition-banner">
+				<h2>🏆 NO ACTIVE COMPETITION</h2>
+				<p>You're not part of any competitions yet.</p>
+				<a href="/competitions" class="join-competition-btn">BROWSE COMPETITIONS →</a>
+			</div>
+		{:else}
+			<!-- Competition Selector (only if multiple competitions) -->
+			{#if data.competitions.length > 1}
+				<div class="competition-selector-bar">
+					<label for="competition-select" class="selector-label">COMPETITION:</label>
+					<select
+						id="competition-select"
+						class="competition-select"
+						value={data.currentCompetition.id}
+						on:change={(e) => {
+							const competitionId = e.currentTarget.value;
+							window.location.href = `/?competition=${competitionId}`;
+						}}
+					>
+						{#each data.competitions as competition}
+							<option value={competition.id}>
+								{competition.name}
+							</option>
+						{/each}
+					</select>
+					<a href="/competitions" class="manage-link">MANAGE →</a>
+				</div>
+			{/if}
 
-		<!-- Competition Selector -->
-		<CompetitionSelector competitions={data.competitions} />
+			<!-- Competition Title -->
+			<div class="competition-header">
+				<h2 class="competition-title">🏆 {data.currentCompetition.name}</h2>
+				{#if data.competitions.length === 1}
+					<a href="/competitions" class="view-all-small">View All Competitions →</a>
+				{/if}
+			</div>
 
-		<!-- Active Players Roster -->
-		<PlayerRoster players={data.activePlayers} currentUserId={data.user.id} />
+			<!-- AI Host Greeting -->
+			<HostGreeting leaderboard={data.leaderboard} {userStats} />
 
-		<!-- Leaderboard -->
-		<Leaderboard leaderboard={data.leaderboard} currentUserId={data.user.id} />
+			<!-- Active Players Roster -->
+			<PlayerRoster players={data.activePlayers} currentUserId={data.user.id} />
 
-		<!-- Trend Chart -->
-		<WeightTrendChart entries={data.entries} height={data.user.height} />
+			<!-- Leaderboard -->
+			<Leaderboard leaderboard={data.leaderboard} currentUserId={data.user.id} />
 
-		<div class="game-screen">
-			<AddWeightForm />
+			<!-- Trend Chart -->
+			<WeightTrendChart entries={data.entries} height={data.user.height} />
 
-			<WeightEntryList entries={data.entries} />
-		</div>
+			<div class="game-screen">
+				<AddWeightForm />
+
+				<WeightEntryList entries={data.entries} />
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -103,6 +140,132 @@
 		gap: 2rem;
 	}
 
+	/* Competition Selector Bar */
+	.competition-selector-bar {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem;
+		background: rgba(0, 0, 0, 0.6);
+		border: 2px solid var(--neon-magenta);
+		margin-bottom: 1rem;
+	}
+
+	.selector-label {
+		color: var(--neon-magenta);
+		font-size: 0.9rem;
+		white-space: nowrap;
+	}
+
+	.competition-select {
+		flex: 1;
+		background: var(--bg-dark);
+		color: var(--neon-cyan);
+		border: 2px solid var(--neon-cyan);
+		padding: 0.75rem;
+		font-family: inherit;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+	.competition-select:hover {
+		border-color: var(--neon-green);
+		box-shadow: 0 0 10px var(--neon-green);
+	}
+
+	.competition-select:focus {
+		outline: none;
+		border-color: var(--neon-magenta);
+		box-shadow: 0 0 15px var(--neon-magenta);
+	}
+
+	.manage-link {
+		color: var(--neon-yellow);
+		text-decoration: none;
+		font-size: 0.85rem;
+		padding: 0.75rem 1rem;
+		border: 2px solid var(--neon-yellow);
+		white-space: nowrap;
+		transition: all 0.3s;
+	}
+
+	.manage-link:hover {
+		background: var(--neon-yellow);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-yellow);
+	}
+
+	/* Competition Header */
+	.competition-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 2rem;
+		padding-bottom: 1rem;
+		border-bottom: 2px solid var(--neon-cyan);
+	}
+
+	.competition-title {
+		font-size: 1.8rem;
+		color: var(--neon-cyan);
+		text-shadow: 0 0 15px var(--neon-cyan);
+		margin: 0;
+	}
+
+	.view-all-small {
+		color: var(--neon-magenta);
+		text-decoration: none;
+		font-size: 0.85rem;
+		padding: 0.5rem 1rem;
+		border: 2px solid var(--neon-magenta);
+		transition: all 0.3s;
+		white-space: nowrap;
+	}
+
+	.view-all-small:hover {
+		background: var(--neon-magenta);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-magenta);
+	}
+
+	/* No Competition State */
+	.no-competition-banner {
+		text-align: center;
+		padding: 4rem 2rem;
+		border: 2px dashed var(--text-secondary);
+		background: rgba(0, 0, 0, 0.4);
+	}
+
+	.no-competition-banner h2 {
+		color: var(--neon-yellow);
+		text-shadow: 0 0 10px var(--neon-yellow);
+		margin-bottom: 1rem;
+	}
+
+	.no-competition-banner p {
+		color: var(--text-secondary);
+		margin-bottom: 2rem;
+		font-size: 1.1rem;
+	}
+
+	.join-competition-btn {
+		display: inline-block;
+		padding: 1rem 2rem;
+		background: transparent;
+		color: var(--neon-green);
+		border: 2px solid var(--neon-green);
+		text-decoration: none;
+		font-size: 1rem;
+		transition: all 0.3s;
+	}
+
+	.join-competition-btn:hover {
+		background: var(--neon-green);
+		color: var(--bg-dark);
+		box-shadow: 0 0 20px var(--neon-green);
+	}
+
 	@media (max-width: 600px) {
 		.container {
 			padding: 1rem;
@@ -110,6 +273,25 @@
 
 		.arcade-border {
 			padding: 1rem;
+		}
+
+		.competition-selector-bar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.selector-label {
+			text-align: center;
+		}
+
+		.competition-header {
+			flex-direction: column;
+			gap: 1rem;
+			text-align: center;
+		}
+
+		.competition-title {
+			font-size: 1.4rem;
 		}
 	}
 </style>
