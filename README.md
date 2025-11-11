@@ -18,7 +18,7 @@ A retro arcade-style weight tracking competition app built with SvelteKit and de
 
 The app uses a secure authentication system with the following features:
 
-- **Email Whitelist**: Only pre-approved emails can create accounts (configured in `src/lib/config/whitelist.ts`)
+- **Admin System**: Only pre-approved admin emails can sign up (configured in `src/lib/config/admins.ts`)
 - **Password Security**: Passwords are hashed using bcrypt with 10 salt rounds
 - **Session Management**: HTTP-only cookies for secure session handling (7-day expiration)
 - **Protected Routes**: Automatic redirection to login page for unauthenticated users
@@ -100,7 +100,7 @@ weightloss/
 │   │   │   ├── config.ts      # AI configuration helper
 │   │   │   └── index.ts       # Barrel exports
 │   │   ├── config/
-│   │   │   └── whitelist.ts   # Email whitelist configuration
+│   │   │   └── admins.ts      # Admin email configuration
 │   │   ├── auth.ts            # Authentication utilities
 │   │   └── bmi.ts             # BMI calculation and leaderboard logic
 │   ├── routes/
@@ -410,23 +410,23 @@ export async function POST({ request, platform }) {
 - **Flexibility** - Swap providers without changing application code
 - **Future-Proof** - Add OpenAI, Workers AI, etc. without touching domain logic
 
-## Managing the Email Whitelist
+## Managing Admins
 
-This app uses an **email whitelist** to control who can sign up. Only approved emails can create accounts.
+This app uses an **admin email list** to control who can sign up as administrators. Admins can create and manage competitions.
 
-### To Add a New User
+### To Add a New Admin
 
-1. Edit `src/lib/config/whitelist.ts`
-2. Add their email to the `allowedEmails` array
+1. Edit `src/lib/config/admins.ts`
+2. Add their email to the `adminEmails` array
 3. Save and restart the dev server (or redeploy)
 
-See [WHITELIST.md](./WHITELIST.md) for detailed instructions.
+See [ADMINS.md](./ADMINS.md) for detailed instructions.
 
 ## Development Tips
 
-### Managing the Email Whitelist
+### Managing Admins
 
-See [WHITELIST.md](./WHITELIST.md) for detailed instructions on adding/removing users.
+See [ADMINS.md](./ADMINS.md) for detailed instructions on adding/removing admins.
 
 ### Adding New Fields
 

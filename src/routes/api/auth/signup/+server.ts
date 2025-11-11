@@ -2,7 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/db/client';
 import { users } from '$lib/db/schema';
 import { hashPassword, setSessionCookie } from '$lib/auth';
-import { isEmailAllowed } from '$lib/config/whitelist';
+import { isAdminEmail } from '$lib/config/admins';
 import { eq } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ request, platform, cookies }) => {
@@ -22,8 +22,10 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 			);
 		}
 
-		// Check if email is whitelisted
-		if (!isEmailAllowed(email)) {
+		// Check if email is an admin email
+		// TODO: In the future, also check if email is on any competition allowlist
+		const isAdmin = isAdminEmail(email);
+		if (!isAdmin) {
 			return json(
 				{ error: 'This email is not authorized. Please contact the administrator for access.' },
 				{ status: 403 }
@@ -46,7 +48,7 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 		// Hash password
 		const hashedPassword = await hashPassword(password);
 
-		// Create user
+		// Create user (mark as admin if email is in admin list)
 		const [newUser] = await db
 			.insert(users)
 			.values({
@@ -54,7 +56,8 @@ export const POST: RequestHandler = async ({ request, platform, cookies }) => {
 				lastName,
 				email,
 				password: hashedPassword,
-				height: parseFloat(height)
+				height: parseFloat(height),
+				isAdmin
 			})
 			.returning();
 
