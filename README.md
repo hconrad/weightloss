@@ -45,7 +45,7 @@ The app calculates a competitive leaderboard for each competition based on BMI i
 2. **BMI Calculation**: Uses the formula `(weight in lbs / (height in inches)²) × 703`
 3. **Improvement Score**: Calculated as `(First BMI - Latest BMI) + Consistency Bonus`
 4. **Consistency Bonus**: Up to 2 points based on number of entries (0.1 points per entry)
-5. **Qualification**: Users need at least 2 weight entries within the competition period to appear
+5. **Qualification**: Users need at least 1 weight entry within the competition period to appear on the leaderboard (users with only 1 entry will have 0 improvement and rank last)
 6. **Rankings**: Participants displayed with trophies for top 3 (🥇 Gold, 🥈 Silver, 🥉 Bronze)
 
 The leaderboard shows:
