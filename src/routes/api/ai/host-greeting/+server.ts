@@ -75,21 +75,22 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const userFullName = `${locals.user.firstName} ${locals.user.lastName}`;
 
 		let context = `Current player: ${userFullName}\n\n`;
-		context += `LEADERBOARD - TOP 5 (Ranked by performance, #1 is FIRST PLACE):\n`;
-		context += `NOTE: Positive BMI Change = weight loss = GOOD performance. Higher rank number = worse placement.\n\n`;
+		context += `NOTE: Positive BMI Change = weight loss = GOOD performance. Rank 1 is FIRST PLACE (best), higher rank numbers = worse placement.\n\n`;
+
+		// Build Player Leaderboards section as JSON
+		context += `Player Leaderboards in JSON format: Rank 1 == First Place Rank 2 == Second place etc. \n`;
 
 		if (leaderboard && leaderboard.length > 0) {
-			leaderboard.forEach((player, index) => {
-				const rank = index + 1;
-				const playerName = `${player.firstName} ${player.lastName}`;
-				const isCurrentUser = player.userId === locals.user?.id;
-				const marker = isCurrentUser ? ' <-- CURRENT PLAYER' : '';
+			const leaderboardData = leaderboard.map((player, index) => ({
+				rank: index + 1,
+				name: `${player.firstName} ${player.lastName}`,
+				bmiChange: parseFloat(player.bmiChange.toFixed(2)),
+				weightChange: parseFloat(player.weightChange.toFixed(1)),
+				isCurrentPlayer: player.userId === locals.user?.id
+			}));
 
-				context += `${rank}. ${playerName}${marker}\n`;
-				context += `   BMI Change: ${player.bmiChange.toFixed(2)} (${player.firstBMI.toFixed(1)} → ${player.latestBMI.toFixed(1)})\n`;
-				context += `   Weight Change: ${player.weightChange.toFixed(1)} lbs\n`;
-				context += `   Entries: ${player.entryCount}\n`;
-			});
+			context += JSON.stringify(leaderboardData, null, 2);
+			context += '\n';
 		} else {
 			context += 'No standings yet - competition just started!\n';
 		}
@@ -97,9 +98,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		// Add user-specific info if they're not on the leaderboard
 		if (userStats && !leaderboard.some(p => p.userId === locals.user?.id)) {
 			context += `\n${userFullName}'s Stats (NOT ON LEADERBOARD):\n`;
-			context += `BMI Change: ${userStats.bmiChange.toFixed(2)}\n`;
-			context += `Weight Change: ${userStats.weightChange.toFixed(1)} lbs\n`;
-			context += `Entries: ${userStats.entryCount}\n`;
+			context += JSON.stringify({
+				bmiChange: parseFloat(userStats.bmiChange.toFixed(2)),
+				weightChange: parseFloat(userStats.weightChange.toFixed(1)),
+				entryCount: userStats.entryCount
+			}, null, 2);
+			context += '\n';
 		} else if (!userStats) {
 			context += `\n${userFullName} has NO ENTRIES YET! Total newbie.\n`;
 		}
