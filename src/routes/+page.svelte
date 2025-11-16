@@ -17,6 +17,16 @@
 		// Check if user is on the leaderboard
 		const leaderboardEntry = data.leaderboard.find((entry) => entry.userId === data.user.id);
 		if (leaderboardEntry) {
+			// Calculate days since last logged for leaderboard entry
+			if (data.entries.length > 0) {
+				const latestEntryDate = new Date(data.entries[0].date);
+				const today = new Date();
+				const daysSinceLastLogged = Math.floor((today.getTime() - latestEntryDate.getTime()) / (1000 * 60 * 60 * 24));
+				return {
+					...leaderboardEntry,
+					daysSinceLastLogged
+				};
+			}
 			return leaderboardEntry;
 		}
 
@@ -31,6 +41,11 @@
 			const firstBMI = calculateBMI(firstEntry.weight, data.user.height);
 			const latestBMI = calculateBMI(latestEntry.weight, data.user.height);
 
+			// Calculate days since last logged
+			const latestEntryDate = new Date(data.entries[0].date);
+			const today = new Date();
+			const daysSinceLastLogged = Math.floor((today.getTime() - latestEntryDate.getTime()) / (1000 * 60 * 60 * 24));
+
 			return {
 				userId: data.user.id,
 				firstName: data.user.firstName,
@@ -42,7 +57,8 @@
 				latestBMI,
 				bmiChange: firstBMI - latestBMI,
 				weightChange: firstEntry.weight - latestEntry.weight,
-				entryCount: data.entries.length
+				entryCount: data.entries.length,
+				daysSinceLastLogged
 			} as UserStats;
 		}
 

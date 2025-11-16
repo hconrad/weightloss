@@ -32,6 +32,7 @@ Rules:
 - Use ALL CAPS for emphasis occasionally
 - Keep it fun and energetic
 - NO emojis or special characters
+- If a player hasn't logged an entry in more than 1 day (check daysSinceLastLogged), call them out for going AFK or abandoning the game
 
 Remember: You're here to entertain and motivate through playful trash talk!`;
 
@@ -101,11 +102,15 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			context += JSON.stringify({
 				bmiChange: parseFloat(userStats.bmiChange.toFixed(2)),
 				weightChange: parseFloat(userStats.weightChange.toFixed(1)),
-				entryCount: userStats.entryCount
+				entryCount: userStats.entryCount,
+				daysSinceLastLogged: userStats.daysSinceLastLogged
 			}, null, 2);
 			context += '\n';
 		} else if (!userStats) {
 			context += `\n${userFullName} has NO ENTRIES YET! Total newbie.\n`;
+		} else if (userStats.daysSinceLastLogged !== undefined) {
+			// User is on the leaderboard, but add daysSinceLastLogged info separately
+			context += `\nIMPORTANT: ${userFullName} last logged an entry ${userStats.daysSinceLastLogged} day(s) ago.\n`;
 		}
 
 		// Create AI service
@@ -113,11 +118,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		const provider = AIProviderFactory.create(config);
 		const ai = new AIService(provider);
 
+		// Build the full prompt with context
+		const userMessage = `${context}\n\nWelcome ${userName} to the arena. Review the standings and give them a greeting. Make it personal based on their performance (or lack thereof).`;
+
 		// Get the greeting
-		const greeting = await ai.ask(
-			`Welcome ${userName} to the arena. Review the standings and give them a greeting. Make it personal based on their performance (or lack thereof).`,
-			HOST_PERSONALITY
-		);
+		const greeting = await ai.ask(userMessage, HOST_PERSONALITY);
 
 		return json({
 			success: true,

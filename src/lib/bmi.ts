@@ -39,6 +39,7 @@ export interface UserStats {
 	bmiChange: number;
 	weightChange: number;
 	entryCount: number;
+	daysSinceLastLogged?: number;
 }
 
 /**
