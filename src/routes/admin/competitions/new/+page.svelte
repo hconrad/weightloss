@@ -1,0 +1,271 @@
+<script lang="ts">
+	import { goto } from '$app/navigation';
+
+	let formData = {
+		name: '',
+		description: '',
+		startDate: '',
+		endDate: '',
+		status: 'active'
+	};
+
+	let isSubmitting = false;
+	let error = '';
+
+	async function handleSubmit(event: Event) {
+		event.preventDefault();
+		isSubmitting = true;
+		error = '';
+
+		try {
+			const response = await fetch('/api/competitions', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(formData)
+			});
+
+			const result = await response.json();
+
+			if (response.ok) {
+				// Success - redirect to competitions page
+				goto('/competitions');
+			} else {
+				error = result.error || 'Failed to create competition';
+			}
+		} catch (err) {
+			error = 'Network error. Please try again.';
+		} finally {
+			isSubmitting = false;
+		}
+	}
+</script>
+
+<svelte:head>
+	<title>Create Competition - Weight Loss Tracker</title>
+</svelte:head>
+
+<div class="container">
+	<div class="header">
+		<h1 class="arcade-title">⚡ CREATE COMPETITION</h1>
+		<a href="/competitions" class="back-link">← BACK TO COMPETITIONS</a>
+	</div>
+
+	{#if error}
+		<div class="error-message">{error}</div>
+	{/if}
+
+	<form on:submit={handleSubmit} class="competition-form">
+		<div class="form-group">
+			<label for="name">Competition Name *</label>
+			<input
+				type="text"
+				id="name"
+				bind:value={formData.name}
+				required
+				placeholder="January Weight Loss Challenge"
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="description">Description</label>
+			<textarea
+				id="description"
+				bind:value={formData.description}
+				rows="4"
+				placeholder="Let's start the new year strong!"
+			/>
+		</div>
+
+		<div class="form-row">
+			<div class="form-group">
+				<label for="startDate">Start Date *</label>
+				<input
+					type="date"
+					id="startDate"
+					bind:value={formData.startDate}
+					required
+				/>
+			</div>
+
+			<div class="form-group">
+				<label for="endDate">End Date</label>
+				<input
+					type="date"
+					id="endDate"
+					bind:value={formData.endDate}
+				/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label for="status">Status</label>
+			<select id="status" bind:value={formData.status}>
+				<option value="draft">Draft</option>
+				<option value="active">Active</option>
+				<option value="completed">Completed</option>
+			</select>
+		</div>
+
+		<div class="form-actions">
+			<button type="submit" class="submit-button" disabled={isSubmitting}>
+				{isSubmitting ? 'CREATING...' : 'CREATE COMPETITION'}
+			</button>
+			<a href="/competitions" class="cancel-button">CANCEL</a>
+		</div>
+	</form>
+</div>
+
+<style>
+	.container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 2rem;
+	}
+
+	.arcade-title {
+		font-size: 2rem;
+		color: var(--neon-cyan);
+		text-shadow: 0 0 10px var(--neon-cyan);
+		margin: 0;
+	}
+
+	.back-link {
+		color: var(--neon-magenta);
+		text-decoration: none;
+		font-size: 0.9rem;
+		padding: 0.5rem 1rem;
+		border: 2px solid var(--neon-magenta);
+		transition: all 0.3s;
+	}
+
+	.back-link:hover {
+		background: var(--neon-magenta);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-magenta);
+	}
+
+	.error-message {
+		padding: 1rem;
+		margin-bottom: 1rem;
+		border: 2px solid var(--neon-orange);
+		color: var(--neon-orange);
+		background: rgba(255, 159, 28, 0.1);
+		text-align: center;
+	}
+
+	.competition-form {
+		background: rgba(0, 0, 0, 0.6);
+		border: 2px solid var(--neon-cyan);
+		padding: 2rem;
+	}
+
+	.form-group {
+		margin-bottom: 1.5rem;
+	}
+
+	.form-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+	}
+
+	label {
+		display: block;
+		color: var(--neon-yellow);
+		margin-bottom: 0.5rem;
+		font-size: 0.9rem;
+		text-shadow: 0 0 8px var(--neon-yellow);
+	}
+
+	input,
+	textarea,
+	select {
+		width: 100%;
+		padding: 0.75rem;
+		background: rgba(0, 0, 0, 0.8);
+		border: 2px solid var(--text-secondary);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 1rem;
+		transition: all 0.3s;
+	}
+
+	input:focus,
+	textarea:focus,
+	select:focus {
+		outline: none;
+		border-color: var(--neon-cyan);
+		box-shadow: 0 0 10px var(--neon-cyan);
+	}
+
+	textarea {
+		resize: vertical;
+	}
+
+	.form-actions {
+		display: flex;
+		gap: 1rem;
+		margin-top: 2rem;
+	}
+
+	.submit-button,
+	.cancel-button {
+		flex: 1;
+		padding: 1rem;
+		font-family: inherit;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+	}
+
+	.submit-button {
+		background: transparent;
+		border: 2px solid var(--neon-green);
+		color: var(--neon-green);
+	}
+
+	.submit-button:hover:not(:disabled) {
+		background: var(--neon-green);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-green);
+	}
+
+	.submit-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.cancel-button {
+		background: transparent;
+		border: 2px solid var(--text-secondary);
+		color: var(--text-secondary);
+	}
+
+	.cancel-button:hover {
+		background: var(--text-secondary);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--text-secondary);
+	}
+
+	@media (max-width: 600px) {
+		.form-row {
+			grid-template-columns: 1fr;
+		}
+
+		.form-actions {
+			flex-direction: column;
+		}
+	}
+</style>
