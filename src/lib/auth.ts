@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import type { RequestEvent } from '@sveltejs/kit';
 import { getDb } from './db/client';
-import { users } from './db/schema';
+import { users, type User } from './db/schema';
 import { eq } from 'drizzle-orm';
+import { adminEmails } from './config/admins';
 
 const SESSION_COOKIE_NAME = 'session';
 
@@ -51,4 +52,21 @@ export function requireAuth(event: RequestEvent) {
 		throw new Error('Unauthorized');
 	}
 	return userId;
+}
+
+/**
+ * Check if a user is a super admin (from the hardcoded admin list)
+ * Super admins have all permissions including managing other admins
+ */
+export function isSuperAdmin(user: User | { email: string }): boolean {
+	const normalizedEmail = user.email.toLowerCase().trim();
+	return adminEmails.some((admin) => admin.toLowerCase().trim() === normalizedEmail);
+}
+
+/**
+ * Check if a user can manage admins (only super admins can)
+ */
+export function canManageAdmins(user: User | null): boolean {
+	if (!user) return false;
+	return isSuperAdmin(user);
 }

@@ -1,9 +1,19 @@
 import type { Handle } from '@sveltejs/kit';
-import { getAuthenticatedUser } from '$lib/auth';
+import { getAuthenticatedUser, isSuperAdmin } from '$lib/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Add user to event.locals if authenticated
-	event.locals.user = await getAuthenticatedUser(event);
+	const user = await getAuthenticatedUser(event);
+
+	// Enhance user with isSuperAdmin flag
+	if (user) {
+		event.locals.user = {
+			...user,
+			isSuperAdmin: isSuperAdmin(user)
+		};
+	} else {
+		event.locals.user = null;
+	}
 
 	return resolve(event);
 };

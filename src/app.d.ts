@@ -6,7 +6,7 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			user: User | null;
+			user: (User & { isSuperAdmin: boolean }) | null;
 		}
 		// interface PageData {}
 		// interface PageState {}
