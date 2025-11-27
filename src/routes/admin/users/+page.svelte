@@ -116,7 +116,10 @@
 <div class="container">
 	<div class="header">
 		<h1 class="arcade-title">⚡ ADMIN MANAGEMENT</h1>
-		<a href="/competitions" class="back-link">← BACK TO COMPETITIONS</a>
+		<div class="header-actions">
+			<a href="/admin/users/new" class="create-user-button">➕ CREATE USER</a>
+			<a href="/competitions" class="back-link">← BACK TO COMPETITIONS</a>
+		</div>
 	</div>
 
 	{#if error}
@@ -264,6 +267,14 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 2rem;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.header-actions {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
 	}
 
 	.arcade-title {
@@ -273,6 +284,22 @@
 		margin: 0;
 	}
 
+	.create-user-button {
+		color: var(--neon-green);
+		text-decoration: none;
+		font-size: 0.9rem;
+		padding: 0.5rem 1rem;
+		border: 2px solid var(--neon-green);
+		transition: all 0.3s;
+		white-space: nowrap;
+	}
+
+	.create-user-button:hover {
+		background: var(--neon-green);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-green);
+	}
+
 	.back-link {
 		color: var(--neon-magenta);
 		text-decoration: none;
@@ -280,6 +307,7 @@
 		padding: 0.5rem 1rem;
 		border: 2px solid var(--neon-magenta);
 		transition: all 0.3s;
+		white-space: nowrap;
 	}
 
 	.back-link:hover {
