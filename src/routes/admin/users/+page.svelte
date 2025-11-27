@@ -242,6 +242,14 @@
 							<span class="badge badge-{getUserBadge(user).color}">
 								{getUserBadge(user).text}
 							</span>
+							{#if !user.isSuperAdmin || user.id === data.currentUser.id}
+								<button
+									class="action-button reset-password"
+									on:click={() => showPasswordDialog(user)}
+								>
+									🔑 RESET PASSWORD
+								</button>
+							{/if}
 							{#if user.isSuperAdmin}
 								<span class="protected-label">PROTECTED</span>
 							{:else if user.isAdmin}
@@ -304,6 +312,50 @@
 					CONFIRM
 				</button>
 				<button class="modal-button cancel" on:click={closeConfirmDialog}>
+					CANCEL
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Password Reset Dialog -->
+{#if passwordDialog.show}
+	<div class="modal-overlay" on:click={closePasswordDialog}>
+		<div class="modal" on:click|stopPropagation>
+			<h3 class="modal-title">Reset Password</h3>
+			<div class="modal-content">
+				<p>
+					Reset password for <strong>{passwordDialog.user.firstName} {passwordDialog.user.lastName}</strong>?
+				</p>
+				<div class="input-group">
+					<label for="new-password">New Password</label>
+					<input
+						id="new-password"
+						type="password"
+						bind:value={passwordDialog.password}
+						placeholder="Enter new password (min 8 characters)"
+						minlength="8"
+						class="password-input"
+					/>
+				</div>
+				{#if error}
+					<p class="modal-error">{error}</p>
+				{/if}
+			</div>
+			<div class="modal-actions">
+				<button
+					class="modal-button confirm"
+					on:click={resetPassword}
+					disabled={passwordDialog.isResetting || passwordDialog.password.length < 8}
+				>
+					{passwordDialog.isResetting ? 'RESETTING...' : 'RESET PASSWORD'}
+				</button>
+				<button
+					class="modal-button cancel"
+					on:click={closePasswordDialog}
+					disabled={passwordDialog.isResetting}
+				>
 					CANCEL
 				</button>
 			</div>
@@ -598,6 +650,18 @@
 		cursor: not-allowed;
 	}
 
+	.action-button.reset-password {
+		background: transparent;
+		border-color: var(--neon-magenta);
+		color: var(--neon-magenta);
+	}
+
+	.action-button.reset-password:hover:not(:disabled) {
+		background: var(--neon-magenta);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-magenta);
+	}
+
 	.empty-state {
 		text-align: center;
 		padding: 3rem 1rem;
@@ -686,6 +750,40 @@
 		background: var(--text-secondary);
 		color: var(--bg-dark);
 		box-shadow: 0 0 15px var(--text-secondary);
+	}
+
+	.input-group {
+		margin: 1rem 0;
+	}
+
+	.input-group label {
+		display: block;
+		color: var(--text-secondary);
+		margin-bottom: 0.5rem;
+		font-size: 0.9rem;
+	}
+
+	.password-input {
+		width: 100%;
+		padding: 0.75rem;
+		background: rgba(0, 0, 0, 0.8);
+		border: 2px solid var(--text-secondary);
+		color: var(--text-primary);
+		font-family: inherit;
+		font-size: 1rem;
+		transition: all 0.3s;
+	}
+
+	.password-input:focus {
+		outline: none;
+		border-color: var(--neon-cyan);
+		box-shadow: 0 0 10px var(--neon-cyan);
+	}
+
+	.modal-error {
+		color: var(--neon-orange);
+		font-size: 0.9rem;
+		margin-top: 0.5rem;
 	}
 
 	@keyframes blink {

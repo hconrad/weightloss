@@ -49,7 +49,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		}));
 
 		return {
-			users: enhancedUsers
+			users: enhancedUsers,
+			currentUser: {
+				id: locals.user.id,
+				email: locals.user.email
+			}
 		};
 	} catch (err) {
 		console.error('Error loading users:', err);
