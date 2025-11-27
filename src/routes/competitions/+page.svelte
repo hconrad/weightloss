@@ -153,7 +153,12 @@
 	{#if data.user.isAdmin}
 		<section class="section admin-section">
 			<h2 class="section-title">⚡ ADMIN: ALL COMPETITIONS</h2>
-			<a href="/admin/competitions/new" class="create-button">+ CREATE NEW COMPETITION</a>
+			<div class="admin-actions-bar">
+				<a href="/admin/competitions/new" class="create-button">+ CREATE NEW COMPETITION</a>
+				{#if data.user.isSuperAdmin}
+					<a href="/admin/users" class="manage-admins-button">⚡ MANAGE ADMINS</a>
+				{/if}
+			</div>
 			{#if data.allCompetitions.length > 0}
 				<div class="competition-list">
 					{#each data.allCompetitions as competition}
@@ -363,6 +368,33 @@
 		display: inline-block;
 		width: auto;
 		margin-bottom: 1.5rem;
+	}
+
+	.admin-actions-bar {
+		display: flex;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.manage-admins-button {
+		display: inline-block;
+		padding: 0.75rem 1.5rem;
+		border: 2px solid var(--neon-yellow);
+		color: var(--neon-yellow);
+		background: transparent;
+		text-decoration: none;
+		font-family: inherit;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-align: center;
+	}
+
+	.manage-admins-button:hover {
+		background: var(--neon-yellow);
+		color: var(--bg-dark);
+		box-shadow: 0 0 15px var(--neon-yellow);
 	}
 
 	.empty-state {
