@@ -131,7 +131,7 @@
 	<div class="admin-actions">
 		<h2 class="section-title">ADMIN ACTIONS</h2>
 		<div class="action-links">
-			<a href="/api/competitions/{data.competition.id}/allowlist" class="action-link">
+			<a href="/admin/competitions/{data.competition.id}/allowlist" class="action-link">
 				MANAGE ALLOWLIST →
 			</a>
 			<a href="/competitions/{data.competition.id}" class="action-link">

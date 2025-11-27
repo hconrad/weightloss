@@ -9,15 +9,20 @@
 		status: 'active'
 	};
 
+	let allowlistEmails = '';
 	let isSubmitting = false;
 	let error = '';
+	let statusMessage = '';
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 		isSubmitting = true;
 		error = '';
+		statusMessage = '';
 
 		try {
+			// Step 1: Create the competition
+			statusMessage = 'Creating competition...';
 			const response = await fetch('/api/competitions', {
 				method: 'POST',
 				headers: {
@@ -28,12 +33,54 @@
 
 			const result = await response.json();
 
-			if (response.ok) {
-				// Success - redirect to competitions page
-				goto('/competitions');
-			} else {
+			if (!response.ok) {
 				error = result.error || 'Failed to create competition';
+				return;
 			}
+
+			const competitionId = result.competition.id;
+
+			// Step 2: Add emails to allowlist if provided
+			if (allowlistEmails.trim()) {
+				statusMessage = 'Adding emails to allowlist...';
+
+				// Split by newlines, commas, or semicolons and clean up
+				const emailArray = allowlistEmails
+					.split(/[\n,;]+/)
+					.map(e => e.trim())
+					.filter(e => e.length > 0);
+
+				if (emailArray.length > 0) {
+					const allowlistResponse = await fetch(`/api/competitions/${competitionId}/allowlist`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ emails: emailArray })
+					});
+
+					if (!allowlistResponse.ok) {
+						// Competition was created, but allowlist failed
+						// Still redirect but show a warning
+						error = 'Competition created, but failed to add some emails to allowlist';
+						setTimeout(() => {
+							goto(`/admin/competitions/${competitionId}/allowlist`);
+						}, 2000);
+						return;
+					}
+
+					const allowlistResult = await allowlistResponse.json();
+					const { added, skipped } = allowlistResult.results;
+					statusMessage = `Success! Competition created with ${added.length} email(s) added${skipped.length > 0 ? ` (${skipped.length} duplicate(s) skipped)` : ''}`;
+				}
+			} else {
+				statusMessage = 'Competition created successfully!';
+			}
+
+			// Success - redirect after a short delay
+			setTimeout(() => {
+				goto('/competitions');
+			}, 1500);
 		} catch (err) {
 			error = 'Network error. Please try again.';
 		} finally {
@@ -54,6 +101,10 @@
 
 	{#if error}
 		<div class="error-message">{error}</div>
+	{/if}
+
+	{#if statusMessage}
+		<div class="status-message">{statusMessage}</div>
 	{/if}
 
 	<form on:submit={handleSubmit} class="competition-form">
@@ -106,6 +157,19 @@
 				<option value="active">Active</option>
 				<option value="completed">Completed</option>
 			</select>
+		</div>
+
+		<div class="form-group allowlist-section">
+			<label for="allowlist">Invite Users (Optional)</label>
+			<p class="help-text">
+				Add email addresses to invite users to this competition. Enter one email per line, or separate with commas.
+			</p>
+			<textarea
+				id="allowlist"
+				bind:value={allowlistEmails}
+				rows="6"
+				placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com"
+			/>
 		</div>
 
 		<div class="form-actions">
@@ -162,6 +226,15 @@
 		text-align: center;
 	}
 
+	.status-message {
+		padding: 1rem;
+		margin-bottom: 1rem;
+		border: 2px solid var(--neon-green);
+		color: var(--neon-green);
+		background: rgba(57, 255, 20, 0.1);
+		text-align: center;
+	}
+
 	.competition-form {
 		background: rgba(0, 0, 0, 0.6);
 		border: 2px solid var(--neon-cyan);
@@ -184,6 +257,18 @@
 		margin-bottom: 0.5rem;
 		font-size: 0.9rem;
 		text-shadow: 0 0 8px var(--neon-yellow);
+	}
+
+	.help-text {
+		color: var(--text-secondary);
+		font-size: 0.85rem;
+		margin: 0.25rem 0 0.75rem 0;
+	}
+
+	.allowlist-section {
+		border-top: 2px solid var(--text-secondary);
+		padding-top: 1.5rem;
+		margin-top: 1rem;
 	}
 
 	input,
