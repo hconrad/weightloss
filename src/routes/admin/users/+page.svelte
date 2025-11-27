@@ -13,6 +13,12 @@
 		user: null,
 		action: 'promote'
 	};
+	let passwordDialog: { show: boolean; user: any; password: string; isResetting: boolean } = {
+		show: false,
+		user: null,
+		password: '',
+		isResetting: false
+	};
 
 	// Filter and search users
 	$: filteredUsers = data.users.filter(user => {
@@ -59,6 +65,56 @@
 			user: null,
 			action: 'promote'
 		};
+	}
+
+	function showPasswordDialog(user: any) {
+		passwordDialog = {
+			show: true,
+			user,
+			password: '',
+			isResetting: false
+		};
+	}
+
+	function closePasswordDialog() {
+		passwordDialog = {
+			show: false,
+			user: null,
+			password: '',
+			isResetting: false
+		};
+	}
+
+	async function resetPassword() {
+		if (!passwordDialog.user || !passwordDialog.password) return;
+
+		passwordDialog.isResetting = true;
+		error = '';
+		successMessage = '';
+
+		try {
+			const response = await fetch(`/api/admin/users/${passwordDialog.user.id}/password`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ password: passwordDialog.password })
+			});
+
+			const result = await response.json();
+
+			if (response.ok) {
+				successMessage = result.message;
+				closePasswordDialog();
+				// No need to reload, just show success message
+			} else {
+				error = result.error || 'Failed to reset password';
+			}
+		} catch (err) {
+			error = 'Network error. Please try again.';
+		} finally {
+			passwordDialog.isResetting = false;
+		}
 	}
 
 	async function toggleAdminStatus(userId: number, newStatus: boolean) {
